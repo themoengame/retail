@@ -2,105 +2,235 @@ import { CONFIG } from './config.js';
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
-const formatRupiah = (n) => new Intl.NumberFormat(CONFIG.CURRENCY_LOCALE, { style: 'currency', currency: CONFIG.CURRENCY_CODE, minimumFractionDigits: 0 }).format(n || 0);
+const formatRp = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n || 0);
 
 let DB = {};
+let cart = [];
+let filter = { start: '', end: '' };
 
-async function loadAllData() {
-  const loader = $('#loader');
-  const errorMsg = $('#error-msg');
+// 🌐 Fetch Data
+async function loadData() {
+  $('#loader').style.display = 'block';
+  $('#error-msg').style.display = 'none';
   try {
-    loader.style.display = 'block';
-    errorMsg.style.display = 'none';
-    
     const res = await fetch(`${CONFIG.APPS_SCRIPT_URL}?v=${Date.now()}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     DB = await res.json();
     
-    $('#last-sync').textContent = `Data sinkron: ${new Date().toLocaleTimeString('id-ID')}`;
-    renderAll();
-    loader.style.display = 'none';
+    // 🛠️ FIX: Hapus baris kosong dari data sheet
+    const clean = (arr, key) => arr.filter(r => r[key]?.toString().trim());
+    DB.master = clean(DB.master, 'Kode Barang');
+    DB.pelanggan = clean(DB.pelanggan || [], 'Nama');
+    DB.supplier = clean(DB.supplier || [], 'Nama');
+
+    $('#last-sync').textContent = `Sinkron: ${new Date().toLocaleTimeString('id-ID')}`;
+    initUI();
+    $('#loader').style.display = 'none';
   } catch (e) {
-    loader.style.display = 'none';
-    errorMsg.style.display = 'block';
-    errorMsg.textContent = `⚠️ ${e.message}. Cek URL config.js & izin Deploy Apps Script.`;
+    $('#loader').style.display = 'none';
+    $('#error-msg').textContent = `⚠️ ${e.message}`;
+    $('#error-msg').style.display = 'block';
   }
 }
 
-function renderAll() {
-  const master = DB.master || [];
-  const trx = DB.transaksi || [];
-  const beli = DB.pembelian || [];
-  const out = DB.pengeluaran || [];
+// 🎨 Init UI
+function initUI() {
+  // Set default dates
+  const today = new Date().toISOString().slice(0, 10);
+  $('#date-start').value = new Date(new Date().setDate(1)).toISOString().slice(0, 10);
+  $('#date-end').value = today;
+  filter.start = $('#date-start').value;
+  filter.end = $('#date-end').value;
 
-  // DASHBOARD
-  const low = master.filter(m => (parseInt(m['Stok Saat Ini'])||0) <= CONFIG.STOK_MINIMAL).length;
-  $('#d-stok-aman').textContent = master.length - low;
-  $('#d-stok-warn').textContent = low;
-  const today = new Date().toISOString().slice(0,10);
-  const jualToday = trx.filter(t => t['Tanggal']?.startsWith(today)).reduce((s,t)=>s+parseFloat(t['Total Harga']||0),0);
-  $('#d-jual').textContent = formatRupiah(jualToday);
-  $('#d-out').textContent = formatRupiah(out.reduce((s,p)=>s+parseFloat(p['Jumlah Uang']||0),0));
-  $('#t-recent').innerHTML = trx.slice(-5).reverse().map(t=>`<tr><td>${t['Tanggal']}</td><td>${t['Nama Barang']}</td><td>${t['Jumlah Beli']}</td><td>${formatRupiah(t['Total Harga'])}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">Belum ada transaksi</td></tr>';
+  renderStats();
+  renderStok();
+  renderKasir();
+  renderGudang();
+  renderMaster();
+  renderReport();
+  renderCharts();
+}
 
-  // STOK
-  $('#t-stok').innerHTML = master.map(m=>{
-    const st = parseInt(m['Stok Saat Ini'])||0;
-    const badge = st <= CONFIG.STOK_MINIMAL ? '<span class="badge warn">Menipis</span>' : '<span class="badge ok">Aman</span>';
-    return `<tr><td>${m['Kode Barang']}</td><td>${m['Nama Barang']}</td><td>${m['Kategori']}</td><td>${st}</td><td>${badge}</td></tr>`;
-  }).join('');
+// 📊 Filter & Render
+function applyFilter() {
+  filter.start = $('#date-start').value;
+  filter.end = $('#date-end').value;
+  initUI();
+}
 
-  // PENJUALAN
-  $('#t-jual').innerHTML = trx.map(t=>`<tr><td>${t['Tanggal']}</td><td>${t['No. Invoice']}</td><td>${t['Kode Barang']}</td><td>${t['Nama Barang']}</td><td>${t['Jumlah Beli']}</td><td>${formatRupiah(t['Total Harga'])}</td><td>${t['Metode Bayar']}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">Belum ada data</td></tr>';
+function getFiltered(arr) {
+  return arr.filter(r => r['Tanggal'] >= filter.start && r['Tanggal'] <= filter.end);
+}
 
-  // PEMBELIAN
-  $('#t-beli').innerHTML = beli.map(b=>`<tr><td>${b['Tanggal']}</td><td>${b['Kode Barang']}</td><td>${b['Nama Barang']}</td><td>${b['Jumlah Masuk']}</td><td>${formatRupiah(b['Harga Beli Satuan'])}</td><td>${formatRupiah(b['Total Modal'])}</td><td>${b['Nama Supplier']}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">Belum ada data</td></tr>';
+// 💰 Dashboard & Laporan
+function renderStats() {
+  const trx = getFiltered(DB.transaksi || []);
+  const out = getFiltered(DB.pengeluaran || []);
+  const today = new Date().toISOString().slice(0, 10);
+  const jualToday = (DB.transaksi || []).filter(t => t['Tanggal'] === today).reduce((s, t) => s + parseFloat(t['Total Harga'] || 0), 0);
 
-  // LAPORAN
-  const totalJual = trx.reduce((s,t)=>s+parseFloat(t['Total Harga']||0),0);
-  const totalBeli = beli.reduce((s,b)=>s+parseFloat(b['Total Modal']||0),0);
-  const totalOut = out.reduce((s,p)=>s+parseFloat(p['Jumlah Uang']||0),0);
-  const laba = totalJual - totalBeli - totalOut;
-  $('#t-laporan').innerHTML = `
-    <tr><td>Total Penjualan</td><td>${formatRupiah(totalJual)}</td></tr>
-    <tr><td>Total Modal Barang</td><td>${formatRupiah(totalBeli)}</td></tr>
-    <tr><td>Pengeluaran Operasional</td><td>${formatRupiah(totalOut)}</td></tr>
-    <tr><td><strong>Estimasi Laba Bersih</strong></td><td><strong>${formatRupiah(laba)}</strong></td></tr>
-    <tr><td>Jumlah Transaksi</td><td>${trx.length} catatan</td></tr>
-    <tr><td>Jumlah Stok</td><td>${master.length} item</td></tr>
+  $('#stats-container').innerHTML = `
+    <div class="stat-card"><h4>Penjualan Hari Ini</h4><span>${formatRp(jualToday)}</span></div>
+    <div class="stat-card"><h4>Total Periode</h4><span>${formatRp(trx.reduce((s,t)=>s+parseFloat(t['Total Harga']||0),0))}</span></div>
+    <div class="stat-card"><h4>Pengeluaran</h4><span>${formatRp(out.reduce((s,p)=>s+parseFloat(p['Jumlah Uang']||0),0))}</span></div>
   `;
 }
 
-// 🔄 Tab Navigation
-$$('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    $$('.tab-btn').forEach(b => b.classList.remove('active'));
-    $$('.section').forEach(s => s.classList.remove('active'));
-    btn.classList.add('active');
-    $(`#${btn.dataset.tab}`).classList.add('active');
-  });
-});
+function renderReport() {
+  const trx = getFiltered(DB.transaksi || []);
+  const beli = getFiltered(DB.pembelian || []);
+  const out = getFiltered(DB.pengeluaran || []);
+  const totalJual = trx.reduce((s,t)=>s+parseFloat(t['Total Harga']||0),0);
+  const totalBeli = beli.reduce((s,b)=>s+parseFloat(b['Total Modal']||0),0);
+  const totalOut = out.reduce((s,p)=>s+parseFloat(p['Jumlah Uang']||0),0);
 
-// 🔍 Search Stok
-$('#search-stok').addEventListener('input', (e) => {
+  $('#t-laporan').innerHTML = `
+    <tr><td>Total Penjualan</td><td>${formatRp(totalJual)}</td></tr>
+    <tr><td>Total Modal Barang</td><td>${formatRp(totalBeli)}</td></tr>
+    <tr><td>Pengeluaran Operasional</td><td>${formatRp(totalOut)}</td></tr>
+    <tr><td><strong>Laba Bersih</strong></td><td><strong>${formatRp(totalJual - totalBeli - totalOut)}</strong></td></tr>
+  `;
+}
+
+// 📈 Charts
+function renderCharts() {
+  const trx = getFiltered(DB.transaksi || []);
+  const salesByDate = {};
+  trx.forEach(t => salesByDate[t['Tanggal']] = (salesByDate[t['Tanggal']]||0) + parseFloat(t['Total Harga']||0));
+  
+  const topItems = {};
+  trx.forEach(t => topItems[t['Nama Barang']] = (topItems[t['Nama Barang']]||0) + parseInt(t['Jumlah Beli']||0));
+
+  renderChart('chart-sales', 'bar', Object.keys(salesByDate).sort(), Object.values(salesByDate), 'Penjualan Harian');
+  const topSorted = Object.entries(topItems).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  renderChart('chart-top', 'doughnut', topSorted.map(x=>x[0]), topSorted.map(x=>x[1]), 'Top 5 Barang');
+}
+
+function renderChart(id, type, labels, data, title) {
+  const ctx = $(`#${id}`).getContext('2d');
+  if (ctx.chart) ctx.chart.destroy();
+  ctx.chart = new Chart(ctx, { type, data: { labels, datasets: [{ label: title, data, backgroundColor: '#2563eb' }] } });
+}
+
+// 📋 Stok Table
+function renderStok() {
+  const q = ($('#search-stok')?.value || '').toLowerCase();
+  const filtered = DB.master.filter(m => 
+    (m['Nama Barang'] || '').toLowerCase().includes(q) || (m['Kode Barang'] || '').toLowerCase().includes(q)
+  );
+  $('#t-stok').innerHTML = filtered.length === 0 ? '<tr><td colspan="5" class="empty">Tidak ada data</td></tr>' :
+    filtered.map(m => {
+      const st = parseInt(m['Stok Saat Ini'] || 0);
+      const badge = st <= 5 ? '<span class="badge warn">Menipis</span>' : '<span class="badge ok">Aman</span>';
+      return `<tr><td>${m['Kode Barang']}</td><td>${m['Nama Barang']}</td><td>${m['Kategori']}</td><td>${st}</td><td>${badge}</td></tr>`;
+    }).join('');
+}
+
+// 🛒 Kasir POS
+function renderKasir() {
+  $('#pos-customer').innerHTML = '<option value="Umum">Pelanggan Umum</option>' + 
+    (DB.pelanggan||[]).map(p=>`<option value="${p['Nama']}">${p['Nama']}</option>`).join('');
+}
+
+$('#pos-search').addEventListener('input', (e) => {
   const q = e.target.value.toLowerCase();
-  const rows = $('#t-stok').querySelectorAll('tr');
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(q) ? '' : 'none';
-  });
+  const res = DB.master.filter(m => (m['Nama Barang']||'').toLowerCase().includes(q) || (m['Kode Barang']||'').toLowerCase().includes(q));
+  $('#pos-results').innerHTML = res.map(m => `<div style="padding:8px; cursor:pointer; border-bottom:1px solid #eee;" onclick="addToCart('${m['Kode Barang']}')">${m['Kode Barang']} - ${m['Nama Barang']} (${formatRp(m['Harga Jual'])})</div>`).join('');
 });
 
-// 📥 Export CSV
-window.exportCSV = () => {
-  const headers = ['Tanggal','Tipe','Kode','Barang','Jumlah','Total'];
-  const rows = [
-    ...(DB.transaksi||[]).map(t=>[t['Tanggal'],'Penjualan',t['Kode Barang'],t['Nama Barang'],t['Jumlah Beli'],t['Total Harga']]),
-    ...(DB.pembelian||[]).map(b=>[b['Tanggal'],'Pembelian',b['Kode Barang'],b['Nama Barang'],b['Jumlah Masuk'],b['Total Modal']])
-  ];
-  let csv = headers.join(',') + '\n' + rows.map(r=>r.join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `laporan_toko_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+window.addToCart = (kode) => {
+  const item = DB.master.find(m => m['Kode Barang'] === kode);
+  if (!item) return;
+  const existing = cart.find(c => c.kode === kode);
+  if (existing) existing.qty++; else cart.push({ ...item, qty: 1 });
+  renderCart();
 };
 
-document.addEventListener('DOMContentLoaded', loadAllData);
+function renderCart() {
+  $('#cart-list').innerHTML = cart.map((c, i) => `
+    <div class="cart-item">
+      <span>${c['Nama Barang']} x${c.qty}</span>
+      <span>${formatRp(c['Harga Jual'] * c.qty)} <button onclick="cart.splice(${i},1);renderCart()" style="margin-left:5px;">🗑️</button></span>
+    </div>
+  `).join('') || '<div class="empty">Keranjang kosong</div>';
+  $('#cart-total').value = formatRp(cart.reduce((s,c)=>s+(c['Harga Jual']*c.qty),0));
+}
+
+window.checkout = async () => {
+  if (!cart.length) return alert('Keranjang kosong!');
+  const btn = event.target; btn.disabled = true; btn.textContent = '⏳ Memproses...';
+  const total = cart.reduce((s,c)=>s+(c['Harga Jual']*c.qty),0);
+  const invoice = 'INV-' + Date.now().toString().slice(-6);
+  const today = new Date().toISOString().slice(0, 10);
+  
+  for (const c of cart) {
+    const row = [today, new Date().toTimeString().slice(0,5), invoice, c['Kode Barang'], c['Nama Barang'], c['Harga Jual'], c.qty, c['Harga Jual']*c.qty, $('#pay-method').value, $('#pos-customer').value];
+    await postData('TRANSAKSI PENJUALAN', 'append', row);
+  }
+  alert(`✅ Transaksi ${invoice} berhasil!`);
+  cart = []; renderCart(); btn.disabled = false; btn.textContent = '✅ Checkout';
+};
+
+// 📦 Gudang
+function renderGudang() {
+  $('#beli-supplier').innerHTML = '<option value="">Pilih Supplier</option>' + (DB.supplier||[]).map(s=>`<option value="${s['Nama']}">${s['Nama']}</option>`).join('');
+  $('#beli-tanggal').value = new Date().toISOString().slice(0, 10);
+}
+
+window.submitRestock = async () => {
+  const row = [$('#beli-tanggal').value, $('#beli-kode').value, '', $('#beli-qty').value, $('#beli-harga').value, $('#beli-qty').value * $('#beli-harga').value, $('#beli-supplier').value, ''];
+  await postData('PEMBELIAN / RESTOCK', 'append', row);
+  alert('📥 Restock tersimpan! Stok akan update otomatis.');
+  $('#beli-kode').value = ''; $('#beli-qty').value = ''; $('#beli-harga').value = '';
+};
+
+// 👥 Master CRUD
+function renderMaster() {
+  $('#list-pelanggan').innerHTML = renderList(DB.pelanggan, 'Pelanggan', ['Nama','No. WA']);
+  $('#list-supplier').innerHTML = renderList(DB.supplier, 'Supplier', ['Nama','Alamat','Kontak']);
+}
+
+function renderList(arr, type, fields) {
+  return arr?.map((r, i) => `<div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+    ${fields.map(f=>`<span>${r[f]||'-'}</span>`).join(' - ')}
+    <button onclick="postData('${type.toUpperCase()}', 'delete', [], ${i+2})" class="btn btn-danger" style="padding:2px 8px; font-size:0.8rem;">Hapus</button>
+  </div>`).join('') || '<div class="empty">Belum ada data</div>';
+}
+
+window.openCRUD = (type) => {
+  const fields = type === 'pelanggan' ? ['Nama','No. WA'] : ['Nama','Alamat','Kontak'];
+  $('#modal-title').textContent = `Tambah ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+  $('#crud-form').innerHTML = fields.map(f => `<div class="form-group"><label>${f}</label><input type="text" id="f-${f}" class="form-control" required></div>`).join('') + 
+    `<button type="button" class="btn btn-primary" onclick="submitCRUD('${type}', '${fields.join(',')}')">Simpan</button>`;
+  $('#crud-modal').style.display = 'flex';
+};
+
+window.submitCRUD = async (type, fieldsStr) => {
+  const fields = fieldsStr.split(',');
+  const row = fields.map(f => $(`#f-${f}`).value);
+  await postData(type.toUpperCase(), 'append', row);
+  closeModal(); loadData();
+};
+
+window.closeModal = () => $('#crud-modal').style.display = 'none';
+
+// 🌐 POST Handler
+async function postData(sheet, action, row = [], rowIndex = 0) {
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ sheet, action, row, rowIndex })
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error);
+  return json;
+}
+
+// 🔄 Navigation & Init
+$$('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+  $$('.tab-btn').forEach(b => b.classList.remove('active'));
+  $$('.section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active'); $(`#${btn.dataset.tab}`).classList.add('active');
+}));
+
+$('#search-stok')?.addEventListener('input', renderStok);
+document.addEventListener('DOMContentLoaded', loadData);
