@@ -11,11 +11,3 @@ const CONFIG = {
     APP_NAME: 'POS Toko Kelontong',
     CURRENCY: 'Rp'
 };
-
-// Cache data
-let dataCache = {
-    products: [],
-    customers: [],
-    suppliers: [],
-    restocks: []
-};
