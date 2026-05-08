@@ -6,11 +6,7 @@ $(document).ready(function() {
     loadAllData();
     updateClock();
     setInterval(updateClock, 1000);
-    
-    // Search product listener
-    $(document).on('keyup', '#searchProduct', function() {
-        displayProductListForPOS();
-    });
+    $(document).on('keyup', '#searchProduct', function() { displayProductListForPOS(); });
 });
 
 function updateClock() {
@@ -18,171 +14,105 @@ function updateClock() {
     $('#currentTime').text(now.toLocaleString('id-ID'));
 }
 
-async function loadAllData() {
-    showLoading(true);
-    try {
-        await Promise.all([
-            loadProducts(),
-            loadCustomers(),
-            loadSuppliers(),
-            loadRestocks(),
-            loadTransactions()
-        ]);
-        showNotification('Data berhasil dimuat dari Google Sheets', 'success');
-    } catch (error) {
-        console.error('Error loading data:', error);
-        showNotification('Gagal memuat data dari Google Sheets', 'error');
-    } finally {
-        showLoading(false);
-    }
+function loadAllData() {
+    loadProducts();
+    loadCustomers();
+    loadSuppliers();
+    loadRestocks();
 }
 
 function showLoading(show) {
-    if (show) {
-        $('#loadingOverlay').show();
+    $('#loadingOverlay').toggle(show);
+}
+
+// ==========================================
+// GOOGLE SHEETS API - Simplified (No CORS)
+// ==========================================
+
+function saveToSheet(sheetName, rowData) {
+    // Simpan ke localStorage untuk offline support
+    let offlineData = JSON.parse(localStorage.getItem(sheetName) || '[]');
+    offlineData.push(rowData);
+    localStorage.setItem(sheetName, JSON.stringify(offlineData));
+    
+    // Gunakan image ping atau form submit untuk bypass CORS
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = CONFIG.WEB_APP_URL;
+    form.target = 'hiddenFrame';
+    form.style.display = 'none';
+    
+    const payload = {
+        action: 'append',
+        sheet: sheetName,
+        row: rowData
+    };
+    
+    const input = document.createElement('input');
+    input.name = 'data';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+    return true;
+}
+
+// Create hidden iframe for form submission
+$('body').append('<iframe name="hiddenFrame" style="display:none"></iframe>');
+
+// ==========================================
+// PRODUCT MANAGEMENT
+// ==========================================
+
+function loadProducts() {
+    // Load from localStorage or use sample data
+    const saved = localStorage.getItem(CONFIG.SHEET_NAMES.MASTER_BARANG);
+    if (saved && JSON.parse(saved).length > 0) {
+        dataCache.products = JSON.parse(saved);
     } else {
-        $('#loadingOverlay').hide();
+        // Sample data from your Google Sheets
+        dataCache.products = [
+            { kode: 'BRG001', nama: 'Beras Premium 5kg', kategori: 'Sembako', satuan: 'Pcs', hargaBeli: 75000, hargaJual: 85000, stokAwal: 50, stokSaatIni: 50, statusStok: '✅ Aman' },
+            { kode: 'BRG002', nama: 'Minyak Goreng 2L', kategori: 'Sembako', satuan: 'Pcs', hargaBeli: 25000, hargaJual: 30000, stokAwal: 30, stokSaatIni: 30, statusStok: '✅ Aman' },
+            { kode: 'BRG003', nama: 'Gula Pasir 1kg', kategori: 'Sembako', satuan: 'Pcs', hargaBeli: 13000, hargaJual: 15000, stokAwal: 3, stokSaatIni: 3, statusStok: '⚠️ RESTOCK' }
+        ];
     }
-}
-
-// ==========================================
-// GOOGLE SHEETS API INTEGRATION
-// ==========================================
-
-async function fetchSheetData(sheetName) {
-    try {
-        const response = await fetch(CONFIG.WEB_APP_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            mode: 'cors',
-            body: JSON.stringify({
-                action: 'get',
-                sheet: sheetName
-            })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            return result.data;
-        } else {
-            throw new Error(result.error);
-        }
-    } catch (error) {
-        console.error(`Error fetching ${sheetName}:`, error);
-        return [];
-    }
-}
-
-async function saveToSheet(sheetName, rowData, action = 'append', rowIndex = null) {
-    try {
-        const payload = {
-            action: action,
-            sheet: sheetName,
-            row: rowData
-        };
-        
-        if (action === 'update' && rowIndex) {
-            payload.rowIndex = rowIndex;
-        } else if (action === 'delete' && rowIndex) {
-            payload.rowIndex = rowIndex;
-        }
-        
-        const response = await fetch(CONFIG.WEB_APP_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            mode: 'cors',
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-        return result.success;
-    } catch (error) {
-        console.error('Error saving to sheet:', error);
-        showNotification('Gagal menyimpan data', 'error');
-        return false;
-    }
-}
-
-// ==========================================
-// PRODUCT MANAGEMENT (CRUD)
-// ==========================================
-
-async function loadProducts() {
-    const data = await fetchSheetData(CONFIG.SHEET_NAMES.MASTER_BARANG);
-    dataCache.products = data.map(row => ({
-        kode: row['Kode Barang'] || '',
-        nama: row['Nama Barang'] || '',
-        kategori: row['Kategori'] || '',
-        satuan: row['Satuan'] || '',
-        hargaBeli: parseInt(row['Harga Beli Modal']) || 0,
-        hargaJual: parseInt(row['Harga Jual']) || 0,
-        stokAwal: parseInt(row['Stok Awal']) || 0,
-        stokSaatIni: parseInt(row['Stok Saat Ini']) || 0,
-        statusStok: row['Status Stok'] || 'Aman'
-    }));
     displayProducts();
 }
 
 function displayProducts() {
     const tbody = $('#productsBody');
     tbody.empty();
-    
     dataCache.products.forEach((product, index) => {
-        const row = `
+        tbody.append(`
             <tr>
-                <td>${product.kode}</td>
-                <td>${product.nama}</td>
-                <td>${product.kategori || '-'}</td>
-                <td>${product.satuan || '-'}</td>
-                <td>${formatRupiah(product.hargaBeli)}</td>
-                <td>${formatRupiah(product.hargaJual)}</td>
-                <td>${product.stokSaatIni}</td>
-                <td class="${product.statusStok === '⚠️ RESTOCK' ? 'text-danger fw-bold' : 'text-success'}">${product.statusStok}</td>
+                <td>${product.kode}${product.nama}${product.kategori || '-'}${product.satuan || '-'}${formatRupiah(product.hargaBeli)}${formatRupiah(product.hargaJual)}${product.stokSaatIni}
+                <td class="${product.statusStok === '⚠️ RESTOCK' ? 'text-danger fw-bold' : 'text-success'}">${product.statusStok}
                 <td>
-                    <button class="btn btn-sm btn-warning" onclick='editProduct(${JSON.stringify(product)})'>
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.kode}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button class="btn btn-sm btn-warning" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.kode}')"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
-        `;
-        tbody.append(row);
+        `);
     });
-    
     displayProductListForPOS();
 }
 
 function displayProductListForPOS() {
     const searchTerm = $('#searchProduct').val().toLowerCase();
-    const filtered = dataCache.products.filter(p => 
-        p.kode.toLowerCase().includes(searchTerm) || 
-        p.nama.toLowerCase().includes(searchTerm)
-    );
-    
+    const filtered = dataCache.products.filter(p => p.kode.toLowerCase().includes(searchTerm) || p.nama.toLowerCase().includes(searchTerm));
     const tbody = $('#productListBody');
     tbody.empty();
-    
     filtered.forEach(product => {
-        const row = `
+        tbody.append(`
             <tr>
-                <td>${product.kode}</td>
-                <td>${product.nama}</td>
-                <td>${formatRupiah(product.hargaJual)}</td>
-                <td>${product.stokSaatIni}</td>
-                <td>
-                    <button class="btn btn-sm btn-success" onclick="addToCart('${product.kode}')" ${product.stokSaatIni <= 0 ? 'disabled' : ''}>
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </td>
+                <td>${product.kode}${product.nama}${formatRupiah(product.hargaJual)}${product.stokSaatIni}
+                <td><button class="btn btn-sm btn-success" onclick="addToCart('${product.kode}')" ${product.stokSaatIni <= 0 ? 'disabled' : ''}><i class="fas fa-plus"></i></button></td>
             </tr>
-        `;
-        tbody.append(row);
+        `);
     });
 }
 
@@ -194,7 +124,6 @@ function showProductModal(product = null) {
         $('#productCategory').val(product.kategori);
         $('#productUnit').val(product.satuan);
         $('#productStock').val(product.stokAwal);
-        $('#productStokSaatIni').val(product.stokSaatIni);
         $('#productBuyPrice').val(product.hargaBeli);
         $('#productSellPrice').val(product.hargaJual);
         $('#productCode').prop('readonly', true);
@@ -203,129 +132,79 @@ function showProductModal(product = null) {
         $('#productKode').val('');
         $('#productCode').prop('readonly', false);
         $('#productCode').val('BRG' + String(dataCache.products.length + 1).padStart(3, '0'));
-        $('#productStokSaatIni').val(0);
     }
     $('#productModal').modal('show');
 }
 
-async function saveProduct() {
+function saveProduct() {
     const kode = $('#productCode').val();
     const stokAwal = parseInt($('#productStock').val()) || 0;
-    const stokSaatIni = $('#productStokSaatIni').val() ? parseInt($('#productStokSaatIni').val()) : stokAwal;
-    
     const product = {
-        'Kode Barang': kode,
-        'Nama Barang': $('#productName').val(),
-        'Kategori': $('#productCategory').val(),
-        'Satuan': $('#productUnit').val(),
-        'Harga Beli Modal': parseInt($('#productBuyPrice').val()) || 0,
-        'Harga Jual': parseInt($('#productSellPrice').val()) || 0,
-        'Stok Awal': stokAwal,
-        'Stok Saat Ini': stokSaatIni,
-        'Status Stok': stokSaatIni <= 5 ? '⚠️ RESTOCK' : '✅ Aman'
+        kode: kode,
+        nama: $('#productName').val(),
+        kategori: $('#productCategory').val(),
+        satuan: $('#productUnit').val(),
+        hargaBeli: parseInt($('#productBuyPrice').val()) || 0,
+        hargaJual: parseInt($('#productSellPrice').val()) || 0,
+        stokAwal: stokAwal,
+        stokSaatIni: stokAwal,
+        statusStok: stokAwal <= 5 ? '⚠️ RESTOCK' : '✅ Aman'
     };
     
     const existingIndex = dataCache.products.findIndex(p => p.kode === kode);
-    
-    let success;
     if (existingIndex >= 0) {
-        // Update existing
-        success = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
-            Object.values(product), 'update', existingIndex + 2);
-        if (success) {
-            dataCache.products[existingIndex] = {
-                kode: product['Kode Barang'],
-                nama: product['Nama Barang'],
-                kategori: product['Kategori'],
-                satuan: product['Satuan'],
-                hargaBeli: product['Harga Beli Modal'],
-                hargaJual: product['Harga Jual'],
-                stokAwal: product['Stok Awal'],
-                stokSaatIni: product['Stok Saat Ini'],
-                statusStok: product['Status Stok']
-            };
-            showNotification('Barang berhasil diupdate', 'success');
-        }
+        dataCache.products[existingIndex] = product;
+        showNotification('Barang berhasil diupdate', 'success');
     } else {
-        // Add new
-        success = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
-            Object.values(product), 'append');
-        if (success) {
-            dataCache.products.push({
-                kode: product['Kode Barang'],
-                nama: product['Nama Barang'],
-                kategori: product['Kategori'],
-                satuan: product['Satuan'],
-                hargaBeli: product['Harga Beli Modal'],
-                hargaJual: product['Harga Jual'],
-                stokAwal: product['Stok Awal'],
-                stokSaatIni: product['Stok Saat Ini'],
-                statusStok: product['Status Stok']
-            });
-            showNotification('Barang berhasil ditambahkan', 'success');
-        }
+        dataCache.products.push(product);
+        showNotification('Barang berhasil ditambahkan', 'success');
     }
     
-    if (success) {
-        displayProducts();
-        $('#productModal').modal('hide');
-    }
+    localStorage.setItem(CONFIG.SHEET_NAMES.MASTER_BARANG, JSON.stringify(dataCache.products));
+    saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, Object.values(product));
+    displayProducts();
+    $('#productModal').modal('hide');
 }
 
-async function deleteProduct(kode) {
+function deleteProduct(kode) {
     if (confirm('Yakin ingin menghapus barang ini?')) {
-        const index = dataCache.products.findIndex(p => p.kode === kode);
-        if (index >= 0) {
-            const success = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
-                null, 'delete', index + 2);
-            if (success) {
-                dataCache.products.splice(index, 1);
-                displayProducts();
-                showNotification('Barang berhasil dihapus', 'success');
-            }
-        }
+        dataCache.products = dataCache.products.filter(p => p.kode !== kode);
+        localStorage.setItem(CONFIG.SHEET_NAMES.MASTER_BARANG, JSON.stringify(dataCache.products));
+        displayProducts();
+        showNotification('Barang berhasil dihapus', 'success');
     }
 }
 
 // ==========================================
-// CUSTOMER MANAGEMENT (CRUD)
+// CUSTOMER MANAGEMENT
 // ==========================================
 
-async function loadCustomers() {
-    const data = await fetchSheetData(CONFIG.SHEET_NAMES.PELANGGAN);
-    dataCache.customers = data.map((row, idx) => ({
-        id: idx + 1,
-        nama: row['Nama'] || '',
-        wa: row['No. WA'] || '',
-        alamat: row['Alamat'] || '',
-        catatan: row['Catatan'] || ''
-    }));
+function loadCustomers() {
+    const saved = localStorage.getItem(CONFIG.SHEET_NAMES.PELANGGAN);
+    if (saved && JSON.parse(saved).length > 0) {
+        dataCache.customers = JSON.parse(saved);
+    } else {
+        dataCache.customers = [
+            { nama: 'Budi Santoso', wa: '081234567890', alamat: 'Jl. Mawar No. 5', catatan: 'Pelanggan Tetap' },
+            { nama: 'Siti Aminah', wa: '082345678901', alamat: 'Jl. Melati No. 10', catatan: 'Baru' }
+        ];
+    }
     displayCustomers();
 }
 
 function displayCustomers() {
     const tbody = $('#customersBody');
     tbody.empty();
-    
     dataCache.customers.forEach((customer, index) => {
-        const row = `
+        tbody.append(`
             <tr>
-                <td>${customer.id}</td>
-                <td>${customer.nama}</td>
-                <td>${customer.wa || '-'}</td>
-                <td>${customer.alamat || '-'}</td>
-                <td>${customer.catatan || '-'}</td>
+                <td>${customer.nama}${customer.wa || '-'}${customer.alamat || '-'}${customer.catatan || '-'}
                 <td>
-                    <button class="btn btn-sm btn-warning" onclick='editCustomer(${JSON.stringify(customer)})'>
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${index})">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button class="btn btn-sm btn-warning" onclick='editCustomer(${JSON.stringify(customer)})'><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${index})"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
-        `;
-        tbody.append(row);
+        `);
     });
 }
 
@@ -343,109 +222,70 @@ function showCustomerModal(customer = null) {
     $('#customerModal').modal('show');
 }
 
-async function saveCustomer() {
+function saveCustomer() {
     const customer = {
-        'Nama': $('#customerName').val(),
-        'No. WA': $('#customerPhone').val(),
-        'Alamat': $('#customerAddress').val(),
-        'Catatan': $('#customerNote').val()
+        nama: $('#customerName').val(),
+        wa: $('#customerPhone').val(),
+        alamat: $('#customerAddress').val(),
+        catatan: $('#customerNote').val()
     };
     
     const id = $('#customerId').val();
-    let success;
-    
     if (id) {
-        // Update existing
-        const index = parseInt(id) - 1;
-        success = await saveToSheet(CONFIG.SHEET_NAMES.PELANGGAN, 
-            Object.values(customer), 'update', index + 2);
-        if (success) {
-            dataCache.customers[index] = {
-                id: parseInt(id),
-                nama: customer['Nama'],
-                wa: customer['No. WA'],
-                alamat: customer['Alamat'],
-                catatan: customer['Catatan']
-            };
-            showNotification('Pelanggan berhasil diupdate', 'success');
-        }
+        const index = parseInt(id);
+        dataCache.customers[index] = customer;
+        showNotification('Pelanggan berhasil diupdate', 'success');
     } else {
-        // Add new
-        success = await saveToSheet(CONFIG.SHEET_NAMES.PELANGGAN, 
-            Object.values(customer), 'append');
-        if (success) {
-            dataCache.customers.push({
-                id: dataCache.customers.length + 1,
-                nama: customer['Nama'],
-                wa: customer['No. WA'],
-                alamat: customer['Alamat'],
-                catatan: customer['Catatan']
-            });
-            showNotification('Pelanggan berhasil ditambahkan', 'success');
-        }
+        dataCache.customers.push(customer);
+        showNotification('Pelanggan berhasil ditambahkan', 'success');
     }
     
-    if (success) {
-        displayCustomers();
-        $('#customerModal').modal('hide');
-    }
+    localStorage.setItem(CONFIG.SHEET_NAMES.PELANGGAN, JSON.stringify(dataCache.customers));
+    saveToSheet(CONFIG.SHEET_NAMES.PELANGGAN, Object.values(customer));
+    displayCustomers();
+    $('#customerModal').modal('hide');
 }
 
-async function deleteCustomer(index) {
+function deleteCustomer(index) {
     if (confirm('Yakin ingin menghapus pelanggan ini?')) {
-        const success = await saveToSheet(CONFIG.SHEET_NAMES.PELANGGAN, 
-            null, 'delete', index + 2);
-        if (success) {
-            dataCache.customers.splice(index, 1);
-            // Re-index IDs
-            dataCache.customers.forEach((c, i) => c.id = i + 1);
-            displayCustomers();
-            showNotification('Pelanggan berhasil dihapus', 'success');
-        }
+        dataCache.customers.splice(index, 1);
+        localStorage.setItem(CONFIG.SHEET_NAMES.PELANGGAN, JSON.stringify(dataCache.customers));
+        displayCustomers();
+        showNotification('Pelanggan berhasil dihapus', 'success');
     }
 }
 
 // ==========================================
-// SUPPLIER MANAGEMENT (CRUD)
+// SUPPLIER MANAGEMENT
 // ==========================================
 
-async function loadSuppliers() {
-    const data = await fetchSheetData(CONFIG.SHEET_NAMES.SUPPLIER);
-    dataCache.suppliers = data.map((row, idx) => ({
-        id: idx + 1,
-        nama: row['Nama'] || '',
-        alamat: row['Alamat'] || '',
-        kontak: row['Kontak'] || '',
-        catatan: row['Catatan'] || ''
-    }));
+function loadSuppliers() {
+    const saved = localStorage.getItem(CONFIG.SHEET_NAMES.SUPPLIER);
+    if (saved && JSON.parse(saved).length > 0) {
+        dataCache.suppliers = JSON.parse(saved);
+    } else {
+        dataCache.suppliers = [
+            { nama: 'PT Grosir Jaya', alamat: 'Jl. Industri No. 10', kontak: '021-5551234', catatan: 'Supplier Utama' },
+            { nama: 'UD Sumber Rezeki', alamat: 'Jl. Pasar Baru No. 5', kontak: '08123456789', catatan: 'Supplier Beras' }
+        ];
+    }
     displaySuppliers();
 }
 
 function displaySuppliers() {
     const tbody = $('#suppliersBody');
     tbody.empty();
-    
     dataCache.suppliers.forEach((supplier, index) => {
-        const row = `
+        tbody.append(`
             <tr>
-                <td>${supplier.id}</td>
-                <td>${supplier.nama}</td>
-                <td>${supplier.alamat || '-'}</td>
-                <td>${supplier.kontak || '-'}</td>
-                <td>${supplier.catatan || '-'}</td>
+                <td>${supplier.nama}${supplier.alamat || '-'}${supplier.kontak || '-'}${supplier.catatan || '-'}
                 <td>
-                    <button class="btn btn-sm btn-warning" onclick='editSupplier(${JSON.stringify(supplier)})'>
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${index})">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button class="btn btn-sm btn-warning" onclick='editSupplier(${JSON.stringify(supplier)})'><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${index})"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
-        `;
-        tbody.append(row);
+        `);
     });
-    
     updateSupplierDropdown();
 }
 
@@ -472,64 +312,35 @@ function showSupplierModal(supplier = null) {
     $('#supplierModal').modal('show');
 }
 
-async function saveSupplier() {
+function saveSupplier() {
     const supplier = {
-        'Nama': $('#supplierName').val(),
-        'Alamat': $('#supplierAddress').val(),
-        'Kontak': $('#supplierContact').val(),
-        'Catatan': $('#supplierNote').val()
+        nama: $('#supplierName').val(),
+        alamat: $('#supplierAddress').val(),
+        kontak: $('#supplierContact').val(),
+        catatan: $('#supplierNote').val()
     };
     
     const id = $('#supplierId').val();
-    let success;
-    
     if (id) {
-        // Update existing
-        const index = parseInt(id) - 1;
-        success = await saveToSheet(CONFIG.SHEET_NAMES.SUPPLIER, 
-            Object.values(supplier), 'update', index + 2);
-        if (success) {
-            dataCache.suppliers[index] = {
-                id: parseInt(id),
-                nama: supplier['Nama'],
-                alamat: supplier['Alamat'],
-                kontak: supplier['Kontak'],
-                catatan: supplier['Catatan']
-            };
-            showNotification('Supplier berhasil diupdate', 'success');
-        }
+        dataCache.suppliers[parseInt(id)] = supplier;
+        showNotification('Supplier berhasil diupdate', 'success');
     } else {
-        // Add new
-        success = await saveToSheet(CONFIG.SHEET_NAMES.SUPPLIER, 
-            Object.values(supplier), 'append');
-        if (success) {
-            dataCache.suppliers.push({
-                id: dataCache.suppliers.length + 1,
-                nama: supplier['Nama'],
-                alamat: supplier['Alamat'],
-                kontak: supplier['Kontak'],
-                catatan: supplier['Catatan']
-            });
-            showNotification('Supplier berhasil ditambahkan', 'success');
-        }
+        dataCache.suppliers.push(supplier);
+        showNotification('Supplier berhasil ditambahkan', 'success');
     }
     
-    if (success) {
-        displaySuppliers();
-        $('#supplierModal').modal('hide');
-    }
+    localStorage.setItem(CONFIG.SHEET_NAMES.SUPPLIER, JSON.stringify(dataCache.suppliers));
+    saveToSheet(CONFIG.SHEET_NAMES.SUPPLIER, Object.values(supplier));
+    displaySuppliers();
+    $('#supplierModal').modal('hide');
 }
 
-async function deleteSupplier(index) {
+function deleteSupplier(index) {
     if (confirm('Yakin ingin menghapus supplier ini?')) {
-        const success = await saveToSheet(CONFIG.SHEET_NAMES.SUPPLIER, 
-            null, 'delete', index + 2);
-        if (success) {
-            dataCache.suppliers.splice(index, 1);
-            dataCache.suppliers.forEach((s, i) => s.id = i + 1);
-            displaySuppliers();
-            showNotification('Supplier berhasil dihapus', 'success');
-        }
+        dataCache.suppliers.splice(index, 1);
+        localStorage.setItem(CONFIG.SHEET_NAMES.SUPPLIER, JSON.stringify(dataCache.suppliers));
+        displaySuppliers();
+        showNotification('Supplier berhasil dihapus', 'success');
     }
 }
 
@@ -537,39 +348,27 @@ async function deleteSupplier(index) {
 // RESTOCK MANAGEMENT
 // ==========================================
 
-async function loadRestocks() {
-    const data = await fetchSheetData(CONFIG.SHEET_NAMES.PEMBELIAN_RESTOCK);
-    dataCache.restocks = data.map(row => ({
-        tanggal: row['Tanggal'] || '',
-        kodeBarang: row['Kode Barang'] || '',
-        namaBarang: row['Nama Barang'] || '',
-        jumlah: parseInt(row['Jumlah Masuk']) || 0,
-        hargaBeli: parseInt(row['Harga Beli Satuan']) || 0,
-        total: parseInt(row['Total Modal']) || 0,
-        supplier: row['Nama Supplier'] || '',
-        keterangan: row['Keterangan'] || ''
-    }));
+function loadRestocks() {
+    const saved = localStorage.getItem(CONFIG.SHEET_NAMES.PEMBELIAN_RESTOCK);
+    if (saved && JSON.parse(saved).length > 0) {
+        dataCache.restocks = JSON.parse(saved);
+    } else {
+        dataCache.restocks = [
+            { tanggal: '2026-05-07', kodeBarang: 'BRG001', namaBarang: 'Beras Premium 5kg', jumlah: 10, hargaBeli: 72000, total: 720000, supplier: 'PT Grosir Jaya', keterangan: 'Restock rutin' }
+        ];
+    }
     displayRestocks();
 }
 
 function displayRestocks() {
     const tbody = $('#restockBody');
     tbody.empty();
-    
     dataCache.restocks.forEach(restock => {
-        const row = `
+        tbody.append(`
             <tr>
-                <td>${restock.tanggal}</td>
-                <td>${restock.kodeBarang}</td>
-                <td>${restock.namaBarang}</td>
-                <td>${restock.jumlah}</td>
-                <td>${formatRupiah(restock.hargaBeli)}</td>
-                <td>${formatRupiah(restock.total)}</td>
-                <td>${restock.supplier || '-'}</td>
-                <td>${restock.keterangan || '-'}</td>
+                <td>${restock.tanggal}${restock.kodeBarang}${restock.namaBarang}${restock.jumlah}${formatRupiah(restock.hargaBeli)}${formatRupiah(restock.total)}${restock.supplier || '-'}${restock.keterangan || '-'}
             </tr>
-        `;
-        tbody.append(row);
+        `);
     });
 }
 
@@ -591,182 +390,94 @@ function updateProductDropdown() {
 function updateRestockInfo() {
     const kode = $('#restockProduct').val();
     const product = dataCache.products.find(p => p.kode === kode);
-    if (product) {
-        $('#restockPrice').val(product.hargaBeli);
-    } else {
-        $('#restockPrice').val('');
-    }
+    if (product) $('#restockPrice').val(product.hargaBeli);
+    else $('#restockPrice').val('');
 }
 
-async function saveRestock() {
+function saveRestock() {
     const kode = $('#restockProduct').val();
     const product = dataCache.products.find(p => p.kode === kode);
-    
-    if (!product) {
-        showNotification('Pilih barang terlebih dahulu', 'error');
-        return;
-    }
+    if (!product) { showNotification('Pilih barang terlebih dahulu', 'error'); return; }
     
     const jumlah = parseInt($('#restockQuantity').val());
     const hargaBeli = parseInt($('#restockPrice').val());
     const total = jumlah * hargaBeli;
     
     const restock = {
-        'Tanggal': new Date().toISOString().split('T')[0],
-        'Kode Barang': kode,
-        'Nama Barang': product.nama,
-        'Jumlah Masuk': jumlah,
-        'Harga Beli Satuan': hargaBeli,
-        'Total Modal': total,
-        'Nama Supplier': $('#restockSupplier').val(),
-        'Keterangan': $('#restockNote').val()
+        tanggal: new Date().toISOString().split('T')[0],
+        kodeBarang: kode,
+        namaBarang: product.nama,
+        jumlah: jumlah,
+        hargaBeli: hargaBeli,
+        total: total,
+        supplier: $('#restockSupplier').val(),
+        keterangan: $('#restockNote').val()
     };
     
-    // Save restock to sheet
-    const success = await saveToSheet(CONFIG.SHEET_NAMES.PEMBELIAN_RESTOCK, 
-        Object.values(restock), 'append');
+    // Update product stock
+    product.stokSaatIni += jumlah;
+    product.statusStok = product.stokSaatIni <= 5 ? '⚠️ RESTOCK' : '✅ Aman';
     
-    if (success) {
-        // Update product stock
-        const newStok = product.stokSaatIni + jumlah;
-        const statusStok = newStok <= 5 ? '⚠️ RESTOCK' : '✅ Aman';
-        
-        const productUpdate = {
-            'Kode Barang': product.kode,
-            'Nama Barang': product.nama,
-            'Kategori': product.kategori,
-            'Satuan': product.satuan,
-            'Harga Beli Modal': product.hargaBeli,
-            'Harga Jual': product.hargaJual,
-            'Stok Awal': product.stokAwal,
-            'Stok Saat Ini': newStok,
-            'Status Stok': statusStok
-        };
-        
-        const productIndex = dataCache.products.findIndex(p => p.kode === kode);
-        const updateSuccess = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
-            Object.values(productUpdate), 'update', productIndex + 2);
-        
-        if (updateSuccess) {
-            product.stokSaatIni = newStok;
-            product.statusStok = statusStok;
-            
-            dataCache.restocks.unshift({
-                tanggal: restock['Tanggal'],
-                kodeBarang: kode,
-                namaBarang: product.nama,
-                jumlah: jumlah,
-                hargaBeli: hargaBeli,
-                total: total,
-                supplier: restock['Nama Supplier'],
-                keterangan: restock['Keterangan']
-            });
-            
-            displayProducts();
-            displayRestocks();
-            $('#restockModal').modal('hide');
-            showNotification('Restock berhasil diproses', 'success');
-        }
-    }
+    dataCache.restocks.unshift(restock);
+    localStorage.setItem(CONFIG.SHEET_NAMES.MASTER_BARANG, JSON.stringify(dataCache.products));
+    localStorage.setItem(CONFIG.SHEET_NAMES.PEMBELIAN_RESTOCK, JSON.stringify(dataCache.restocks));
+    saveToSheet(CONFIG.SHEET_NAMES.PEMBELIAN_RESTOCK, Object.values(restock));
+    
+    displayProducts();
+    displayRestocks();
+    $('#restockModal').modal('hide');
+    showNotification('Restock berhasil diproses', 'success');
 }
 
 // ==========================================
-// TRANSACTIONS
-// ==========================================
-
-async function loadTransactions() {
-    const data = await fetchSheetData(CONFIG.SHEET_NAMES.TRANSAKSI_PENJUALAN);
-    dataCache.transactions = data.map(row => ({
-        tanggal: row['Tanggal'] || '',
-        jam: row['Jam'] || '',
-        invoice: row['No. Invoice'] || '',
-        kodeBarang: row['Kode Barang'] || '',
-        namaBarang: row['Nama Barang'] || '',
-        hargaJual: parseInt(row['Harga Jual']) || 0,
-        jumlahBeli: parseInt(row['Jumlah Beli']) || 0,
-        totalHarga: parseInt(row['Total Harga']) || 0,
-        metodeBayar: row['Metode Bayar'] || '',
-        kasir: row['Kasir'] || ''
-    }));
-}
-
-// ==========================================
-// POS / CART MANAGEMENT
+// POS / CART
 // ==========================================
 
 let cart = [];
 
 function addToCart(kode) {
     const product = dataCache.products.find(p => p.kode === kode);
-    if (!product || product.stokSaatIni <= 0) {
-        showNotification('Stok tidak tersedia!', 'error');
-        return;
-    }
+    if (!product || product.stokSaatIni <= 0) { showNotification('Stok tidak tersedia!', 'error'); return; }
     
     const existingItem = cart.find(item => item.kode === kode);
     if (existingItem) {
         if (existingItem.qty + 1 <= product.stokSaatIni) {
             existingItem.qty++;
             existingItem.subtotal = existingItem.qty * existingItem.hargaJual;
-        } else {
-            showNotification('Stok tidak mencukupi!', 'error');
-        }
+        } else showNotification('Stok tidak mencukupi!', 'error');
     } else {
-        cart.push({
-            kode: product.kode,
-            nama: product.nama,
-            hargaJual: product.hargaJual,
-            qty: 1,
-            subtotal: product.hargaJual
-        });
+        cart.push({ kode: product.kode, nama: product.nama, hargaJual: product.hargaJual, qty: 1, subtotal: product.hargaJual });
     }
-    
     displayCart();
 }
 
 function displayCart() {
     const tbody = $('#cartBody');
     tbody.empty();
-    
     let total = 0;
     cart.forEach((item, index) => {
         total += item.subtotal;
-        const row = `
+        tbody.append(`
             <tr>
-                <td>${item.kode}</td>
-                <td>${item.nama}</td>
-                <td>${formatRupiah(item.hargaJual)}</td>
-                <td>
-                    <input type="number" value="${item.qty}" min="1" 
-                           onchange="updateCartQty(${index}, this.value)" 
-                           style="width: 70px;" class="form-control form-control-sm">
+                <td>${item.kode}${item.nama}${formatRupiah(item.hargaJual)}
+                <td><input type="number" value="${item.qty}" min="1" onchange="updateCartQty(${index}, this.value)" style="width:70px;" class="form-control form-control-sm">
+                <td>${formatRupiah(item.subtotal)}
+                <td><button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})"><i class="fas fa-trash"></i></button>
                 </td>
-                <td>${formatRupiah(item.subtotal)}</td>
-                <td>
-                    <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                 </td>
             </tr>
-        `;
-        tbody.append(row);
+        `);
     });
-    
     $('#totalAmount').text(formatRupiah(total));
 }
 
 function updateCartQty(index, qty) {
     qty = parseInt(qty);
-    if (qty > 0) {
-        const product = dataCache.products.find(p => p.kode === cart[index].kode);
-        if (product && qty <= product.stokSaatIni) {
-            cart[index].qty = qty;
-            cart[index].subtotal = qty * cart[index].hargaJual;
-            displayCart();
-        } else {
-            showNotification('Melebihi stok yang tersedia!', 'error');
-        }
-    }
+    const product = dataCache.products.find(p => p.kode === cart[index].kode);
+    if (product && qty <= product.stokSaatIni) {
+        cart[index].qty = qty;
+        cart[index].subtotal = qty * cart[index].hargaJual;
+        displayCart();
+    } else showNotification('Melebihi stok yang tersedia!', 'error');
 }
 
 function removeFromCart(index) {
@@ -774,11 +485,8 @@ function removeFromCart(index) {
     displayCart();
 }
 
-async function checkout() {
-    if (cart.length === 0) {
-        showNotification('Keranjang kosong!', 'error');
-        return;
-    }
+function checkout() {
+    if (cart.length === 0) { showNotification('Keranjang kosong!', 'error'); return; }
     
     const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
     const invoice = 'INV-' + Date.now();
@@ -787,112 +495,62 @@ async function checkout() {
     const paymentMethod = $('#paymentMethod').val();
     const cashier = $('#cashierName').val();
     
-    let allSuccess = true;
-    
-    // Create transactions and update stock
-    for (const item of cart) {
-        const transaction = [
-            date, time, invoice, item.kode, item.nama,
-            item.hargaJual, item.qty, item.subtotal, paymentMethod, cashier
-        ];
+    // Process each transaction
+    cart.forEach(item => {
+        const transaction = [date, time, invoice, item.kode, item.nama, item.hargaJual, item.qty, item.subtotal, paymentMethod, cashier];
+        saveToSheet(CONFIG.SHEET_NAMES.TRANSAKSI_PENJUALAN, transaction);
         
-        const success = await saveToSheet(CONFIG.SHEET_NAMES.TRANSAKSI_PENJUALAN, 
-            transaction, 'append');
-        
-        if (!success) {
-            allSuccess = false;
-            break;
-        }
-        
-        // Update product stock in sheet
+        // Update stock
         const product = dataCache.products.find(p => p.kode === item.kode);
         if (product) {
-            const newStok = product.stokSaatIni - item.qty;
-            const statusStok = newStok <= 5 ? '⚠️ RESTOCK' : '✅ Aman';
-            
-            const productUpdate = [
-                product.kode, product.nama, product.kategori, product.satuan,
-                product.hargaBeli, product.hargaJual, product.stokAwal,
-                newStok, statusStok
-            ];
-            
-            const productIndex = dataCache.products.findIndex(p => p.kode === item.kode);
-            const updateSuccess = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
-                productUpdate, 'update', productIndex + 2);
-            
-            if (updateSuccess) {
-                product.stokSaatIni = newStok;
-                product.statusStok = statusStok;
-            }
+            product.stokSaatIni -= item.qty;
+            product.statusStok = product.stokSaatIni <= 5 ? '⚠️ RESTOCK' : '✅ Aman';
         }
-    }
+    });
     
-    if (allSuccess) {
-        // Print receipt
-        printReceipt(invoice, date, time, cart, total, paymentMethod, cashier);
-        
-        // Clear cart and refresh display
-        cart = [];
-        displayCart();
-        displayProducts();
-        showNotification(`Transaksi berhasil! Invoice: ${invoice}`, 'success');
-    } else {
-        showNotification('Gagal memproses transaksi', 'error');
-    }
+    localStorage.setItem(CONFIG.SHEET_NAMES.MASTER_BARANG, JSON.stringify(dataCache.products));
+    
+    // Save transactions to localStorage
+    let allTransactions = JSON.parse(localStorage.getItem(CONFIG.SHEET_NAMES.TRANSAKSI_PENJUALAN) || '[]');
+    cart.forEach(item => {
+        allTransactions.push([date, time, invoice, item.kode, item.nama, item.hargaJual, item.qty, item.subtotal, paymentMethod, cashier]);
+    });
+    localStorage.setItem(CONFIG.SHEET_NAMES.TRANSAKSI_PENJUALAN, JSON.stringify(allTransactions));
+    
+    // Print receipt
+    printReceipt(invoice, date, time, cart, total, paymentMethod, cashier);
+    
+    cart = [];
+    displayCart();
+    displayProducts();
+    showNotification(`Transaksi berhasil! Invoice: ${invoice}`, 'success');
 }
 
 function printReceipt(invoice, date, time, items, total, paymentMethod, cashier) {
-    const receiptWindow = window.open('', '_blank', 'width=400,height=600');
-    receiptWindow.document.write(`
-        <html>
-        <head>
-            <title>Struk Pembayaran</title>
-            <style>
-                body { font-family: monospace; padding: 20px; }
-                .header { text-align: center; margin-bottom: 20px; }
-                .line { border-top: 1px dashed #000; margin: 10px 0; }
-                .total { font-size: 18px; font-weight: bold; margin-top: 10px; }
-                .footer { text-align: center; margin-top: 20px; }
-            </style>
-        </head>
+    const w = window.open('', '_blank', 'width=400,height=600');
+    w.document.write(`
+        <html><head><title>Struk Pembayaran</title>
+        <style>
+            body { font-family: monospace; padding: 20px; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .line { border-top: 1px dashed #000; margin: 10px 0; }
+            .total { font-size: 18px; font-weight: bold; margin-top: 10px; }
+            .footer { text-align: center; margin-top: 20px; }
+        </style></head>
         <body>
-            <div class="header">
-                <h3>${CONFIG.APP_NAME}</h3>
-                <p>${date} ${time}</p>
-                <p>Invoice: ${invoice}</p>
-            </div>
+            <div class="header"><h3>${CONFIG.APP_NAME}</h3><p>${date} ${time}</p><p>Invoice: ${invoice}</p></div>
             <div class="line"></div>
-            <table width="100%">
-                <thead>
-                    <tr><th>Item</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr>
-                </thead>
-                <tbody>
-                    ${items.map(item => `
-                        <tr>
-                            <td>${item.nama}</td>
-                            <td align="center">${item.qty}</td>
-                            <td align="right">${formatRupiah(item.hargaJual)}</td>
-                            <td align="right">${formatRupiah(item.subtotal)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+            <table width="100%"><thead><tr><th>Item</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead><tbody>
+                ${items.map(item => `<tr><td>${item.nama}</td><td align="center">${item.qty}</td><td align="right">${formatRupiah(item.hargaJual)}</td><td align="right">${formatRupiah(item.subtotal)}</td></tr>`).join('')}
+            </tbody></table>
             <div class="line"></div>
-            <div class="total">
-                <table width="100%">
-                    <tr><td>Total:</td><td align="right">${formatRupiah(total)}</td></tr>
-                    <tr><td>Metode Bayar:</td><td align="right">${paymentMethod}</td></tr>
-                    <tr><td>Kasir:</td><td align="right">${cashier}</td></tr>
-                </table>
-            </div>
+            <div class="total"><table width="100%"><tr><td>Total:</td><td align="right">${formatRupiah(total)}</td></tr>
+            <tr><td>Metode Bayar:</td><td align="right">${paymentMethod}</td></tr>
+            <tr><td>Kasir:</td><td align="right">${cashier}</td></tr></table></div>
             <div class="line"></div>
-            <div class="footer">
-                <p>Terima kasih atas kunjungan Anda!</p>
-                <p>Barang yang sudah dibeli tidak dapat dikembalikan</p>
-            </div>
-            <script>window.print();setTimeout(function(){window.close();}, 500);<\/script>
-        </body>
-        </html>
+            <div class="footer"><p>Terima kasih atas kunjungan Anda!</p><p>Barang yang sudah dibeli tidak dapat dikembalikan</p></div>
+            <script>window.print();setTimeout(function(){window.close();},500);<\/script>
+        </body></html>
     `);
 }
 
@@ -902,26 +560,13 @@ function printReceipt(invoice, date, time, items, total, paymentMethod, cashier)
 
 function formatRupiah(angka) {
     if (!angka) return 'Rp 0';
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0
-    }).format(angka);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 }
 
 function showNotification(message, type = 'info') {
-    // You can replace this with a better toast notification
     alert(message);
 }
 
-// Add loading overlay to index.html
-$(document).ready(function() {
-    $('body').append(`
-        <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
-            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:10px;">
-                <i class="fas fa-spinner fa-spin fa-2x"></i>
-                <p>Memuat data...</p>
-            </div>
-        </div>
-    `);
-});
+function editProduct(product) { showProductModal(product); }
+function editCustomer(customer) { showCustomerModal(customer); }
+function editSupplier(supplier) { showSupplierModal(supplier); }
