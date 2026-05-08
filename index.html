@@ -3,365 +3,1015 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Toko Kelontong - Point of Sale System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>NovaPOS - Toko Kelontong</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --neon-cyan: #00f2ff;
+            --neon-purple: #bc13fe;
+            --glass-dark: rgba(15, 17, 26, 0.82);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
         body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0c10;
+            color: #c5c6c7;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 242, 255, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 100% 100%, rgba(188, 19, 254, 0.05) 0%, transparent 25%);
+            min-height: 100vh;
+            overflow: hidden;
         }
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.5rem;
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+
+        /* Glass effect */
+        .glass {
+            background-color: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 0.75rem;
         }
-        .card {
-            border-radius: 10px;
+
+        .futuristic-card {
+            background-color: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .futuristic-card:hover {
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+            border-color: rgba(0, 242, 255, 0.4);
+        }
+
+        .btn-primary {
+            background-color: var(--neon-cyan);
+            color: black;
+            font-weight: 700;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             border: none;
-            margin-bottom: 20px;
         }
-        .card-header {
-            border-radius: 10px 10px 0 0;
-            font-weight: bold;
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: white;
+            box-shadow: 0 0 20px #00f2ff;
+            transform: translateY(-1px);
         }
-        .table th {
-            background-color: #f8f9fa;
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            border: 1px solid var(--glass-border);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .badge-success {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
             font-weight: 600;
         }
-        .table-responsive {
-            overflow-x: auto;
+
+        .badge-danger {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
         }
-        .btn-sm {
-            margin: 0 2px;
+
+        .input-glass {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: white;
+            outline: none;
+            transition: all 0.2s;
         }
-        #cartTable input {
-            text-align: center;
+
+        .input-glass:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
         }
-        #productListTable tbody tr:hover {
-            background-color: #f0f8ff;
+
+        .select-glass {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: white;
+            outline: none;
             cursor: pointer;
         }
-        .text-danger {
-            font-weight: bold;
+
+        .select-glass option {
+            background-color: #1a1c2a;
         }
-        .modal-header {
-            background-color: #007bff;
-            color: white;
-            border-radius: 10px 10px 0 0;
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 242, 255, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(0, 242, 255, 0.6); }
         }
-        #loadingOverlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-spin {
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            margin: 1rem;
+            margin-right: 0;
+            border-radius: 1rem;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow: auto;
+            padding: 2rem;
+        }
+
+        .nav-item {
             width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            color: #c5c6c7;
+            cursor: pointer;
+            font-size: 0.875rem;
         }
-        #loadingOverlay div {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%,-50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
         }
+
+        .nav-item.active {
+            background-color: var(--neon-cyan);
+            color: black;
+            font-weight: 700;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* POS Layout */
+        .pos-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.5rem;
+            height: calc(100vh - 100px);
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 300px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .toast {
+            background-color: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         @media (max-width: 768px) {
-            .container-fluid { padding: 10px; }
-            .table { font-size: 12px; }
-            .btn-sm { padding: 2px 5px; font-size: 10px; }
+            .pos-layout { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid">
-            <span class="navbar-brand">
-                <i class="fas fa-store"></i> POS Toko Kelontong
-            </span>
-            <div class="d-flex">
-                <span class="text-white" id="currentTime"></span>
+
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="p-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-neon-cyan rounded-lg flex items-center justify-center" style="background-color: #00f2ff; box-shadow: 0 0 15px rgba(0,242,255,0.5);">
+                    <span style="color: black; font-weight: bold; font-size: 20px;">📊</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white tracking-tight">NovaPOS</h1>
+                    <p class="text-[10px] text-neon-cyan uppercase tracking-widest font-bold" style="color: #00f2ff;">Systems V2.0</p>
+                </div>
             </div>
         </div>
-    </nav>
+
+        <nav class="flex-1 px-4 py-4 space-y-2">
+            <button class="nav-item" data-page="dashboard" onclick="showPage('dashboard')">
+                <span>📊</span> Dashboard
+            </button>
+            <button class="nav-item" data-page="pos" onclick="showPage('pos')">
+                <span>🛒</span> POS Transaksi
+            </button>
+            <button class="nav-item" data-page="products" onclick="showPage('products')">
+                <span>📦</span> Master Barang
+            </button>
+            <button class="nav-item" data-page="customers" onclick="showPage('customers')">
+                <span>👥</span> Data Pelanggan
+            </button>
+            <button class="nav-item" data-page="suppliers" onclick="showPage('suppliers')">
+                <span>🚚</span> Data Supplier
+            </button>
+            <button class="nav-item" data-page="restock" onclick="showPage('restock')">
+                <span>🔄</span> Restock Barang
+            </button>
+            <button class="nav-item" data-page="operational" onclick="showPage('operational')">
+                <span>💰</span> Pengeluaran
+            </button>
+        </nav>
+
+        <div class="p-4 mt-auto">
+            <div class="glass p-4 rounded-xl">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-2 h-2 rounded-full bg-neon-cyan animate-pulse" style="background-color: #00f2ff;"></div>
+                    <span class="text-[10px] uppercase tracking-tighter font-bold" style="color: #bc13fe;">System Status</span>
+                </div>
+                <p class="text-xs text-white/60" id="connectionStatus">Memeriksa koneksi...</p>
+            </div>
+        </div>
+    </aside>
 
     <!-- Main Content -->
-    <div class="container-fluid mt-3">
-        <!-- Tab Navigation -->
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pos-tab" data-bs-toggle="tab" data-bs-target="#pos" type="button" role="tab">
-                    <i class="fas fa-shopping-cart"></i> POS
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers" type="button" role="tab">
-                    <i class="fas fa-users"></i> Pelanggan
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button" role="tab">
-                    <i class="fas fa-boxes"></i> Barang
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers" type="button" role="tab">
-                    <i class="fas fa-truck"></i> Supplier
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="restock-tab" data-bs-toggle="tab" data-bs-target="#restock" type="button" role="tab">
-                    <i class="fas fa-arrow-down"></i> Restock
-                </button>
-            </li>
-        </ul>
-
-        <!-- Tab Content -->
-        <div class="tab-content mt-3">
-            <!-- POS Tab -->
-            <div class="tab-pane fade show active" id="pos" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-7">
-                        <div class="card shadow">
-                            <div class="card-header bg-success text-white">
-                                <i class="fas fa-shopping-cart"></i> Keranjang Belanja
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive" style="max-height: 400px;">
-                                    <table class="table table-bordered" id="cartTable">
-                                        <thead>
-                                            <tr><th>Kode</th><th>Nama Barang</th><th>Harga</th><th>Qty</th><th>Subtotal</th><th>Aksi</th></tr>
-                                        </thead>
-                                        <tbody id="cartBody"></tbody>
-                                    </table>
-                                </div>
-                                <div class="mt-3">
-                                    <h4>Total: <span id="totalAmount">Rp 0</span></h4>
-                                    <div class="row mt-3">
-                                        <div class="col-md-6">
-                                            <label>Metode Bayar</label>
-                                            <select id="paymentMethod" class="form-select">
-                                                <option value="Tunai">Tunai</option>
-                                                <option value="QRIS">QRIS</option>
-                                                <option value="Transfer Bank">Transfer Bank</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label>Kasir</label>
-                                            <input type="text" id="cashierName" class="form-control" value="Admin">
-                                        </div>
-                                    </div>
-                                    <button class="btn btn-success mt-3 w-100" onclick="checkout()">
-                                        <i class="fas fa-check-circle"></i> Proses Checkout
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-5">
-                        <div class="card shadow">
-                            <div class="card-header bg-info text-white">
-                                <i class="fas fa-search"></i> Cari Barang
-                            </div>
-                            <div class="card-body">
-                                <input type="text" id="searchProduct" class="form-control mb-3" placeholder="Cari kode atau nama barang...">
-                                <div class="table-responsive" style="max-height: 500px;">
-                                    <table class="table table-sm" id="productListTable">
-                                        <thead><tr><th>Kode</th><th>Nama</th><th>Harga</th><th>Stok</th><th>Aksi</th></tr></thead>
-                                        <tbody id="productListBody"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <main class="main-content">
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page">
+            <div class="stats-grid" id="dashboardStats">
+                <div class="futuristic-card">
+                    <div class="text-2xl font-bold text-white" id="statRevenue">Rp 0</div>
+                    <div class="text-xs text-white/40">Pendapatan Hari Ini</div>
+                </div>
+                <div class="futuristic-card">
+                    <div class="text-2xl font-bold text-white" id="statTransactions">0</div>
+                    <div class="text-xs text-white/40">Transaksi Hari Ini</div>
+                </div>
+                <div class="futuristic-card">
+                    <div class="text-2xl font-bold text-white" id="statProducts">0</div>
+                    <div class="text-xs text-white/40">Total Produk</div>
+                </div>
+                <div class="futuristic-card">
+                    <div class="text-2xl font-bold text-white" id="statLowStock">0</div>
+                    <div class="text-xs text-white/40">Stok Menipis</div>
                 </div>
             </div>
-
-            <!-- Customers Tab -->
-            <div class="tab-pane fade" id="customers" role="tabpanel">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-users"></i> Manajemen Pelanggan
-                        <button class="btn btn-light btn-sm float-end" onclick="showCustomerModal()">
-                            <i class="fas fa-plus"></i> Tambah Pelanggan
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead><tr><th>Nama</th><th>No. WA</th><th>Alamat</th><th>Catatan</th><th>Aksi</th></tr></thead>
-                                <tbody id="customersBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+            <div class="futuristic-card">
+                <h3 class="font-bold text-white mb-4">📈 Transaksi Terakhir</h3>
+                <div id="recentTransactions"></div>
             </div>
+        </div>
 
-            <!-- Products Tab -->
-            <div class="tab-pane fade" id="products" role="tabpanel">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-boxes"></i> Manajemen Barang
-                        <button class="btn btn-light btn-sm float-end" onclick="showProductModal()">
-                            <i class="fas fa-plus"></i> Tambah Barang
-                        </button>
+        <!-- POS Page -->
+        <div id="page-pos" class="page">
+            <div class="pos-layout">
+                <div>
+                    <div class="relative mb-4">
+                        <input type="text" id="posSearch" placeholder="🔍 Cari produk..." class="input-glass" onkeyup="filterPOSProducts()">
                     </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead><tr><th>Kode</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Harga Beli</th><th>Harga Jual</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead>
-                                <tbody id="productsBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div id="posCategories" class="flex gap-2 flex-wrap mb-4"></div>
+                    <div id="posProductGrid" class="product-grid"></div>
                 </div>
-            </div>
-
-            <!-- Suppliers Tab -->
-            <div class="tab-pane fade" id="suppliers" role="tabpanel">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-truck"></i> Manajemen Supplier
-                        <button class="btn btn-light btn-sm float-end" onclick="showSupplierModal()">
-                            <i class="fas fa-plus"></i> Tambah Supplier
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead><tr><th>Nama</th><th>Alamat</th><th>Kontak</th><th>Catatan</th><th>Aksi</th></tr></thead>
-                                <tbody id="suppliersBody"></tbody>
-                            </table>
+                <div class="futuristic-card flex flex-col">
+                    <h3 class="font-bold text-white mb-4">🛒 Keranjang <span id="cartCount" class="text-neon-cyan">(0)</span></h3>
+                    <div id="cartItems" class="cart-items space-y-2"></div>
+                    <div class="border-t border-glass-border pt-4 mt-4">
+                        <div class="flex justify-between mb-4">
+                            <span>Total:</span>
+                            <span class="text-xl font-bold text-neon-cyan" id="cartTotal">Rp 0</span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Restock Tab -->
-            <div class="tab-pane fade" id="restock" role="tabpanel">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-arrow-down"></i> Transaksi Restock
-                        <button class="btn btn-light btn-sm float-end" onclick="showRestockModal()">
-                            <i class="fas fa-plus"></i> Restock Barang
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead><tr><th>Tanggal</th><th>Kode Barang</th><th>Nama Barang</th><th>Jumlah</th><th>Harga Beli</th><th>Total</th><th>Supplier</th><th>Keterangan</th></tr></thead>
-                                <tbody id="restockBody"></tbody>
-                            </table>
+                        <div class="flex gap-2">
+                            <select id="customerSelect" class="select-glass flex-1">
+                                <option value="">Umum</option>
+                            </select>
+                            <button class="btn-primary" onclick="openCheckout()" id="checkoutBtn">Bayar</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modals -->
-    <div class="modal fade" id="customerModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah/Edit Pelanggan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="customerId">
-                    <div class="mb-3"><label>Nama</label><input type="text" id="customerName" class="form-control" required></div>
-                    <div class="mb-3"><label>No. WA</label><input type="text" id="customerPhone" class="form-control"></div>
-                    <div class="mb-3"><label>Alamat</label><textarea id="customerAddress" class="form-control" rows="2"></textarea></div>
-                    <div class="mb-3"><label>Catatan</label><textarea id="customerNote" class="form-control" rows="2"></textarea></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="saveCustomer()">Simpan</button>
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <!-- Products Page -->
+        <div id="page-products" class="page">
+            <div class="flex justify-between mb-4">
+                <h2 class="text-2xl font-bold text-white">📦 Master Barang</h2>
+                <button class="btn-primary" onclick="openProductModal()">+ Tambah Produk</button>
+            </div>
+            <div class="futuristic-card">
+                <input type="text" id="productSearch" placeholder="🔍 Cari produk..." class="input-glass mb-4" onkeyup="renderProductsTable()">
+                <div style="overflow-x: auto;">
+                    <table class="w-full text-left">
+                        <thead class="text-white/40 text-xs">
+                            <tr><th>Kode</th><th>Nama</th><th>Kategori</th><th>Harga Jual</th><th>Stok</th><th>Status</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="productsTable"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="modal fade" id="productModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah/Edit Barang</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="productKode">
-                    <div class="row">
-                        <div class="col-md-6 mb-3"><label>Kode Barang</label><input type="text" id="productCode" class="form-control" required></div>
-                        <div class="col-md-6 mb-3"><label>Nama Barang</label><input type="text" id="productName" class="form-control" required></div>
-                        <div class="col-md-4 mb-3"><label>Kategori</label><input type="text" id="productCategory" class="form-control"></div>
-                        <div class="col-md-4 mb-3"><label>Satuan</label><input type="text" id="productUnit" class="form-control"></div>
-                        <div class="col-md-4 mb-3"><label>Stok Awal</label><input type="number" id="productStock" class="form-control"></div>
-                        <div class="col-md-6 mb-3"><label>Harga Beli Modal</label><input type="number" id="productBuyPrice" class="form-control"></div>
-                        <div class="col-md-6 mb-3"><label>Harga Jual</label><input type="number" id="productSellPrice" class="form-control"></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="saveProduct()">Simpan</button>
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <!-- Customers Page -->
+        <div id="page-customers" class="page">
+            <div class="flex justify-between mb-4">
+                <h2 class="text-2xl font-bold text-white">👥 Data Pelanggan</h2>
+                <button class="btn-primary" onclick="openCustomerModal()">+ Tambah Pelanggan</button>
+            </div>
+            <div class="futuristic-card">
+                <input type="text" id="customerSearch" placeholder="🔍 Cari pelanggan..." class="input-glass mb-4" onkeyup="renderCustomersTable()">
+                <div style="overflow-x: auto;">
+                    <table class="w-full text-left">
+                        <thead class="text-white/40 text-xs">
+                            <tr><th>Nama</th><th>WhatsApp</th><th>Alamat</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="customersTable"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="modal fade" id="supplierModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah/Edit Supplier</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="supplierId">
-                    <div class="mb-3"><label>Nama Supplier</label><input type="text" id="supplierName" class="form-control" required></div>
-                    <div class="mb-3"><label>Alamat</label><textarea id="supplierAddress" class="form-control" rows="2"></textarea></div>
-                    <div class="mb-3"><label>Kontak</label><input type="text" id="supplierContact" class="form-control"></div>
-                    <div class="mb-3"><label>Catatan</label><textarea id="supplierNote" class="form-control" rows="2"></textarea></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="saveSupplier()">Simpan</button>
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <!-- Suppliers Page -->
+        <div id="page-suppliers" class="page">
+            <div class="flex justify-between mb-4">
+                <h2 class="text-2xl font-bold text-white">🚚 Data Supplier</h2>
+                <button class="btn-primary" onclick="openSupplierModal()">+ Tambah Supplier</button>
+            </div>
+            <div class="futuristic-card">
+                <input type="text" id="supplierSearch" placeholder="🔍 Cari supplier..." class="input-glass mb-4" onkeyup="renderSuppliersTable()">
+                <div style="overflow-x: auto;">
+                    <table class="w-full text-left">
+                        <thead class="text-white/40 text-xs">
+                            <tr><th>Nama</th><th>Kontak</th><th>Alamat</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="suppliersTable"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="modal fade" id="restockModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Restock Barang</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3"><label>Pilih Barang</label><select id="restockProduct" class="form-select" onchange="updateRestockInfo()"><option value="">Pilih Barang...</option></select></div>
-                    <div class="mb-3"><label>Jumlah Masuk</label><input type="number" id="restockQuantity" class="form-control" min="1"></div>
-                    <div class="mb-3"><label>Harga Beli Satuan</label><input type="number" id="restockPrice" class="form-control"></div>
-                    <div class="mb-3"><label>Supplier</label><select id="restockSupplier" class="form-select"><option value="">Pilih Supplier...</option></select></div>
-                    <div class="mb-3"><label>Keterangan</label><textarea id="restockNote" class="form-control" rows="2"></textarea></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="saveRestock()">Proses Restock</button>
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <!-- Restock Page -->
+        <div id="page-restock" class="page">
+            <div class="flex justify-between mb-4">
+                <h2 class="text-2xl font-bold text-white">🔄 Restock Barang</h2>
+                <button class="btn-primary" onclick="openRestockModal()">+ Restock Baru</button>
+            </div>
+            <div class="futuristic-card">
+                <input type="text" id="restockSearch" placeholder="🔍 Cari riwayat..." class="input-glass mb-4" onkeyup="renderRestocksTable()">
+                <div style="overflow-x: auto;">
+                    <table class="w-full text-left">
+                        <thead class="text-white/40 text-xs">
+                            <tr><th>Tanggal</th><th>Produk</th><th>Jumlah</th><th>Supplier</th><th>Total</th></tr>
+                        </thead>
+                        <tbody id="restocksTable"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
+        <!-- Operational Page -->
+        <div id="page-operational" class="page">
+            <div class="flex justify-between mb-4">
+                <h2 class="text-2xl font-bold text-white">💰 Pengeluaran Operasional</h2>
+                <button class="btn-primary" onclick="openExpenseModal()">+ Tambah Pengeluaran</button>
+            </div>
+            <div class="stats-grid mb-4">
+                <div class="futuristic-card"><div class="text-xl font-bold text-white" id="expenseMonth">Rp 0</div><div class="text-xs text-white/40">Bulan Ini</div></div>
+                <div class="futuristic-card"><div class="text-xl font-bold text-white" id="expenseTotal">Rp 0</div><div class="text-xs text-white/40">Total Semua</div></div>
+            </div>
+            <div class="futuristic-card">
+                <input type="text" id="expenseSearch" placeholder="🔍 Cari pengeluaran..." class="input-glass mb-4" onkeyup="renderExpensesTable()">
+                <div style="overflow-x: auto;">
+                    <table class="w-full text-left">
+                        <thead class="text-white/40 text-xs">
+                            <tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th>Jumlah</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="expensesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Modal Product -->
+<div id="productModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center;">
+    <div class="glass p-6 rounded-2xl w-full max-w-md">
+        <h3 class="text-xl font-bold text-white mb-4" id="productModalTitle">Tambah Produk</h3>
+        <input type="hidden" id="editProductId">
+        <input type="text" id="productKode" placeholder="Kode Barang" class="input-glass mb-3" readonly>
+        <input type="text" id="productNama" placeholder="Nama Barang" class="input-glass mb-3">
+        <select id="productKategori" class="select-glass mb-3"><option>Sembako</option><option>Minuman</option><option>Makanan</option><option>Snack</option><option>Perawatan</option><option>Kebutuhan Rumah</option><option>Lainnya</option></select>
+        <select id="productSatuan" class="select-glass mb-3"><option>Pcs</option><option>Kg</option><option>Liter</option><option>Pack</option><option>Dus</option><option>Botol</option></select>
+        <input type="number" id="productBeli" placeholder="Harga Beli" class="input-glass mb-3">
+        <input type="number" id="productJual" placeholder="Harga Jual" class="input-glass mb-3">
+        <input type="number" id="productStok" placeholder="Stok Awal" class="input-glass mb-4">
+        <div class="flex gap-3">
+            <button class="btn-secondary flex-1" onclick="closeModal('productModal')">Batal</button>
+            <button class="btn-primary flex-1" onclick="saveProduct()">Simpan</button>
+        </div>
     </div>
+</div>
 
-    <div id="loadingOverlay"><div><i class="fas fa-spinner fa-spin fa-2x"></i><p>Memuat data...</p></div></div>
+<script>
+    // ============================================
+    // KONFIGURASI - GANTI DENGAN URL APPS SCRIPT ANDA
+    // ============================================
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkC8rnCnUjwgWPPj7WE3p6-3Fl36bElA_Tymjp2yTyvg09JRGtP4OyAk86k1w71-YnjA/exec';
+    
+    // ============================================
+    // GLOBAL STATE
+    // ============================================
+    let products = [];
+    let customers = [];
+    let suppliers = [];
+    let transactions = [];
+    let restocks = [];
+    let expenses = [];
+    let cart = [];
+    let currentPage = 'dashboard';
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+    // ============================================
+    // API CALLS
+    // ============================================
+    async function apiCall(action, sheet, payload = {}) {
+        try {
+            const body = { action, sheet, ...payload };
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    async function loadAllData() {
+        const result = await apiCall('getAllData', '');
+        if (result.success && result.data) {
+            products = result.data['MASTER BARANG'] || [];
+            customers = result.data['PELANGGAN'] || [];
+            suppliers = result.data['SUPPLIER'] || [];
+            transactions = result.data['TRANSAKSI PENJUALAN'] || [];
+            restocks = result.data['PEMBELIAN / RESTOCK'] || [];
+            expenses = result.data['PENGELUARAN OPERASIONAL'] || [];
+            
+            // Add row index to each item for update/delete
+            products.forEach((p, idx) => p._rowIndex = idx + 2);
+            customers.forEach((c, idx) => c._rowIndex = idx + 2);
+            suppliers.forEach((s, idx) => s._rowIndex = idx + 2);
+            expenses.forEach((e, idx) => e._rowIndex = idx + 2);
+            
+            document.getElementById('connectionStatus').innerHTML = '✅ Terhubung ke Google Sheets';
+            document.getElementById('connectionStatus').style.color = '#00f2ff';
+            return true;
+        } else {
+            document.getElementById('connectionStatus').innerHTML = '❌ Gagal konek. Cek URL Apps Script';
+            document.getElementById('connectionStatus').style.color = '#ef4444';
+            return false;
+        }
+    }
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    function formatCurrency(val) {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
+    }
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function showPage(page) {
+        currentPage = page;
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${page}`).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+        
+        if (page === 'dashboard') renderDashboard();
+        if (page === 'pos') renderPOS();
+        if (page === 'products') renderProductsTable();
+        if (page === 'customers') renderCustomersTable();
+        if (page === 'suppliers') renderSuppliersTable();
+        if (page === 'restock') renderRestocksTable();
+        if (page === 'operational') renderOperationalPage();
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    // ============================================
+    // DASHBOARD
+    // ============================================
+    function renderDashboard() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayTx = transactions.filter(t => t.Tanggal === today);
+        const todayRevenue = todayTx.reduce((s, t) => s + (t['Total Harga'] || 0), 0);
+        const lowStock = products.filter(p => (p['Stok Saat Ini'] || 0) <= 5).length;
+        
+        document.getElementById('statRevenue').innerHTML = formatCurrency(todayRevenue);
+        document.getElementById('statTransactions').innerHTML = todayTx.length;
+        document.getElementById('statProducts').innerHTML = products.length;
+        document.getElementById('statLowStock').innerHTML = lowStock;
+        
+        const recent = [...transactions].slice(-5).reverse();
+        const html = recent.map(t => `<div class="flex justify-between py-2 border-b border-glass-border"><span>${t['No. Invoice']}</span><span class="text-neon-cyan">${formatCurrency(t['Total Harga'])}</span></div>`).join('');
+        document.getElementById('recentTransactions').innerHTML = html || '<div class="text-white/40 text-center py-4">Belum ada transaksi</div>';
+    }
+
+    // ============================================
+    // POS
+    // ============================================
+    function renderPOS() {
+        renderPOSCategories();
+        renderPOSProducts();
+        renderCart();
+        loadCustomerSelect();
+    }
+
+    function renderPOSCategories() {
+        const cats = ['Semua', ...new Set(products.map(p => p.Kategori))];
+        document.getElementById('posCategories').innerHTML = cats.map(c => `<button class="btn-secondary text-xs py-1 px-3" onclick="filterPOSCategory('${c}')">${c}</button>`).join('');
+    }
+
+    let posCategory = 'Semua';
+    function filterPOSCategory(cat) { posCategory = cat; renderPOSProducts(); }
+    
+    function filterPOSProducts() {
+        const search = document.getElementById('posSearch')?.value.toLowerCase() || '';
+        const filtered = products.filter(p => 
+            (posCategory === 'Semua' || p.Kategori === posCategory) &&
+            (p['Nama Barang']?.toLowerCase().includes(search) || p['Kode Barang']?.toLowerCase().includes(search))
+        );
+        const grid = document.getElementById('posProductGrid');
+        grid.innerHTML = filtered.map(p => `
+            <div class="futuristic-card cursor-pointer hover:border-neon-cyan" onclick="addToCart('${p['Kode Barang']}')">
+                <div class="text-2xl mb-2">${getCategoryEmoji(p.Kategori)}</div>
+                <div class="font-bold text-white text-sm">${p['Nama Barang']}</div>
+                <div class="text-neon-cyan text-sm">${formatCurrency(p['Harga Jual'])}</div>
+                <div class="text-xs text-white/40 mt-1">Stok: ${p['Stok Saat Ini']} ${p.Satuan}</div>
+            </div>
+        `).join('');
+    }
+
+    function getCategoryEmoji(cat) {
+        const map = { Sembako: '🍚', Minuman: '🥤', Makanan: '🍜', Snack: '🍪', Perawatan: '🧴', 'Kebutuhan Rumah': '🧹', Lainnya: '📦' };
+        return map[cat] || '📦';
+    }
+
+    function addToCart(kode) {
+        const product = products.find(p => p['Kode Barang'] === kode);
+        if (!product || product['Stok Saat Ini'] <= 0) return;
+        const existing = cart.find(c => c.kodeBarang === kode);
+        if (existing) {
+            if (existing.qty >= product['Stok Saat Ini']) return;
+            existing.qty++;
+            existing.subtotal = existing.qty * existing.hargaJual;
+        } else {
+            cart.push({
+                kodeBarang: kode,
+                namaBarang: product['Nama Barang'],
+                hargaJual: product['Harga Jual'],
+                qty: 1,
+                subtotal: product['Harga Jual']
+            });
+        }
+        renderCart();
+    }
+
+    function updateCartQty(kode, delta) {
+        const item = cart.find(c => c.kodeBarang === kode);
+        if (!item) return;
+        const product = products.find(p => p['Kode Barang'] === kode);
+        const newQty = item.qty + delta;
+        if (newQty < 1) {
+            cart = cart.filter(c => c.kodeBarang !== kode);
+        } else if (product && newQty <= product['Stok Saat Ini']) {
+            item.qty = newQty;
+            item.subtotal = item.qty * item.hargaJual;
+        }
+        renderCart();
+    }
+
+    function removeFromCart(kode) {
+        cart = cart.filter(c => c.kodeBarang !== kode);
+        renderCart();
+    }
+
+    function renderCart() {
+        const container = document.getElementById('cartItems');
+        const total = cart.reduce((s, c) => s + c.subtotal, 0);
+        document.getElementById('cartTotal').innerHTML = formatCurrency(total);
+        document.getElementById('cartCount').innerHTML = `(${cart.reduce((s,c)=>s+c.qty,0)})`;
+        
+        if (cart.length === 0) {
+            container.innerHTML = '<div class="text-white/40 text-center py-8">Keranjang kosong</div>';
+            return;
+        }
+        container.innerHTML = cart.map(c => `
+            <div class="flex justify-between items-center p-2 glass rounded-lg">
+                <div><div class="text-white text-sm">${c.namaBarang}</div><div class="text-neon-cyan text-xs">${formatCurrency(c.hargaJual)}</div></div>
+                <div class="flex items-center gap-2"><button class="btn-secondary text-xs w-6 h-6 p-0" onclick="updateCartQty('${c.kodeBarang}',-1)">-</button><span class="text-white">${c.qty}</span><button class="btn-secondary text-xs w-6 h-6 p-0" onclick="updateCartQty('${c.kodeBarang}',1)">+</button></div>
+                <div class="text-white">${formatCurrency(c.subtotal)}</div>
+                <button class="text-red-400" onclick="removeFromCart('${c.kodeBarang}')">🗑️</button>
+            </div>
+        `).join('');
+    }
+
+    function loadCustomerSelect() {
+        const select = document.getElementById('customerSelect');
+        select.innerHTML = '<option value="">Umum</option>' + customers.map(c => `<option value="${c.Nama}">${c.Nama}</option>`).join('');
+    }
+
+    function openCheckout() {
+        if (cart.length === 0) { showToast('Keranjang kosong', 'error'); return; }
+        const total = cart.reduce((s,c)=>s+c.subtotal,0);
+        const bayar = prompt(`Total: ${formatCurrency(total)}\nMasukkan jumlah bayar:`, total);
+        if (!bayar) return;
+        const bayarNum = parseInt(bayar);
+        if (bayarNum < total) { showToast('Uang kurang!', 'error'); return; }
+        processPayment(bayarNum);
+    }
+
+    async function processPayment(cashPaid) {
+        const total = cart.reduce((s,c)=>s+c.subtotal,0);
+        const now = new Date();
+        const tanggal = now.toISOString().split('T')[0];
+        const jam = now.toLocaleTimeString('id-ID');
+        const invoiceNo = `INV${Date.now()}`;
+        const customerName = document.getElementById('customerSelect').value || 'Umum';
+        
+        for (const item of cart) {
+            const row = [tanggal, jam, invoiceNo, item.kodeBarang, item.namaBarang, item.hargaJual, item.qty, item.subtotal, 'Tunai', 'Admin'];
+            await apiCall('append', 'TRANSAKSI PENJUALAN', { row });
+            
+            // Update stock
+            const product = products.find(p => p['Kode Barang'] === item.kodeBarang);
+            if (product) {
+                const newStock = product['Stok Saat Ini'] - item.qty;
+                const productRow = product._rowIndex;
+                const updateRow = [product['Kode Barang'], product['Nama Barang'], product.Kategori, product.Satuan, product['Harga Beli Modal'], product['Harga Jual'], product['Stok Awal'], newStock, newStock <= 5 ? '⚠️ RESTOCK' : '✅ Aman'];
+                await apiCall('update', 'MASTER BARANG', { rowIndex: productRow, row: updateRow });
+            }
+        }
+        
+        showToast(`Transaksi berhasil! Kembalian: ${formatCurrency(cashPaid - total)}`);
+        cart = [];
+        renderCart();
+        await loadAllData();
+        renderPOS();
+        renderDashboard();
+    }
+
+    // ============================================
+    // PRODUCTS CRUD
+    // ============================================
+    function renderProductsTable() {
+        const search = document.getElementById('productSearch')?.value.toLowerCase() || '';
+        const filtered = products.filter(p => p['Nama Barang']?.toLowerCase().includes(search) || p['Kode Barang']?.toLowerCase().includes(search));
+        const tbody = document.getElementById('productsTable');
+        tbody.innerHTML = filtered.map(p => `
+            <tr class="border-b border-glass-border">
+                <td class="py-2">${p['Kode Barang']}</td>
+                <td>${p['Nama Barang']}</td>
+                <td>${p.Kategori}</td>
+                <td class="text-neon-cyan">${formatCurrency(p['Harga Jual'])}</td>
+                <td class="${p['Stok Saat Ini'] <= 5 ? 'text-red-400' : 'text-white'}">${p['Stok Saat Ini']}</td>
+                <td>${p['Status Stok'] === '⚠️ RESTOCK' ? '<span class="badge-danger">⚠️ Restock</span>' : '<span class="badge-success">✅ Aman</span>'}</td>
+                <td><button class="text-neon-cyan mr-2" onclick="editProduct(${p._rowIndex})">✏️</button><button class="text-red-400" onclick="deleteProduct(${p._rowIndex})">🗑️</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function openProductModal() {
+        document.getElementById('productModalTitle').innerText = 'Tambah Produk';
+        document.getElementById('editProductId').value = '';
+        document.getElementById('productKode').value = `BRG${String(products.length+1).padStart(3,'0')}`;
+        document.getElementById('productNama').value = '';
+        document.getElementById('productBeli').value = '';
+        document.getElementById('productJual').value = '';
+        document.getElementById('productStok').value = '';
+        document.getElementById('productModal').style.display = 'flex';
+    }
+
+    function editProduct(rowIndex) {
+        const p = products.find(p => p._rowIndex === rowIndex);
+        if (!p) return;
+        document.getElementById('productModalTitle').innerText = 'Edit Produk';
+        document.getElementById('editProductId').value = rowIndex;
+        document.getElementById('productKode').value = p['Kode Barang'];
+        document.getElementById('productNama').value = p['Nama Barang'];
+        document.getElementById('productKategori').value = p.Kategori;
+        document.getElementById('productSatuan').value = p.Satuan;
+        document.getElementById('productBeli').value = p['Harga Beli Modal'];
+        document.getElementById('productJual').value = p['Harga Jual'];
+        document.getElementById('productStok').value = p['Stok Awal'];
+        document.getElementById('productModal').style.display = 'flex';
+    }
+
+    async function saveProduct() {
+        const rowIndex = document.getElementById('editProductId').value;
+        const kode = document.getElementById('productKode').value;
+        const nama = document.getElementById('productNama').value;
+        const kategori = document.getElementById('productKategori').value;
+        const satuan = document.getElementById('productSatuan').value;
+        const beli = parseInt(document.getElementById('productBeli').value) || 0;
+        const jual = parseInt(document.getElementById('productJual').value) || 0;
+        const stokAwal = parseInt(document.getElementById('productStok').value) || 0;
+        const stokSaatIni = rowIndex ? (products.find(p => p._rowIndex == rowIndex)?.['Stok Saat Ini'] || stokAwal) : stokAwal;
+        const status = stokSaatIni <= 5 ? '⚠️ RESTOCK' : '✅ Aman';
+        const row = [kode, nama, kategori, satuan, beli, jual, stokAwal, stokSaatIni, status];
+        
+        let result;
+        if (rowIndex) {
+            result = await apiCall('update', 'MASTER BARANG', { rowIndex: parseInt(rowIndex), row });
+        } else {
+            result = await apiCall('append', 'MASTER BARANG', { row });
+        }
+        if (result.success) {
+            showToast('Produk tersimpan!');
+            closeModal('productModal');
+            await loadAllData();
+            renderProductsTable();
+            renderPOS();
+        } else {
+            showToast('Gagal: ' + result.message, 'error');
+        }
+    }
+
+    async function deleteProduct(rowIndex) {
+        if (!confirm('Yakin hapus produk ini?')) return;
+        const result = await apiCall('delete', 'MASTER BARANG', { rowIndex });
+        if (result.success) {
+            showToast('Produk dihapus');
+            await loadAllData();
+            renderProductsTable();
+            renderPOS();
+        } else {
+            showToast('Gagal hapus', 'error');
+        }
+    }
+
+    // ============================================
+    // CUSTOMERS CRUD
+    // ============================================
+    function renderCustomersTable() {
+        const search = document.getElementById('customerSearch')?.value.toLowerCase() || '';
+        const filtered = customers.filter(c => c.Nama?.toLowerCase().includes(search) || c['No. WA']?.includes(search));
+        document.getElementById('customersTable').innerHTML = filtered.map(c => `
+            <tr class="border-b border-glass-border"><td>${c.Nama}</td><td>${c['No. WA']}</td><td>${c.Alamat || '-'}</td>
+            <td><button class="text-red-400" onclick="deleteCustomer(${c._rowIndex})">🗑️</button></td></tr>
+        `).join('');
+    }
+
+    function openCustomerModal() {
+        const nama = prompt('Nama Pelanggan:');
+        if (!nama) return;
+        const wa = prompt('No WhatsApp:');
+        const alamat = prompt('Alamat:');
+        apiCall('append', 'PELANGGAN', { row: [nama, wa, alamat, ''] }).then(async r => {
+            if (r.success) { showToast('Pelanggan ditambahkan'); await loadAllData(); renderCustomersTable(); loadCustomerSelect(); }
+        });
+    }
+
+    async function deleteCustomer(rowIndex) {
+        if (!confirm('Hapus pelanggan?')) return;
+        const r = await apiCall('delete', 'PELANGGAN', { rowIndex });
+        if (r.success) { showToast('Dihapus'); await loadAllData(); renderCustomersTable(); loadCustomerSelect(); }
+    }
+
+    // ============================================
+    // SUPPLIERS CRUD
+    // ============================================
+    function renderSuppliersTable() {
+        const search = document.getElementById('supplierSearch')?.value.toLowerCase() || '';
+        const filtered = suppliers.filter(s => s.Nama?.toLowerCase().includes(search) || s.Kontak?.includes(search));
+        document.getElementById('suppliersTable').innerHTML = filtered.map(s => `
+            <tr class="border-b border-glass-border"><td>${s.Nama}</td><td>${s.Kontak}</td><td>${s.Alamat || '-'}</td>
+            <td><button class="text-red-400" onclick="deleteSupplier(${s._rowIndex})">🗑️</button></td></tr>
+        `).join('');
+    }
+
+    function openSupplierModal() {
+        const nama = prompt('Nama Supplier:');
+        if (!nama) return;
+        const kontak = prompt('Kontak:');
+        const alamat = prompt('Alamat:');
+        apiCall('append', 'SUPPLIER', { row: [nama, alamat, kontak, ''] }).then(async r => {
+            if (r.success) { showToast('Supplier ditambahkan'); await loadAllData(); renderSuppliersTable(); }
+        });
+    }
+
+    async function deleteSupplier(rowIndex) {
+        if (!confirm('Hapus supplier?')) return;
+        const r = await apiCall('delete', 'SUPPLIER', { rowIndex });
+        if (r.success) { showToast('Dihapus'); await loadAllData(); renderSuppliersTable(); }
+    }
+
+    // ============================================
+    // RESTOCK
+    // ============================================
+    function renderRestocksTable() {
+        const search = document.getElementById('restockSearch')?.value.toLowerCase() || '';
+        const filtered = restocks.filter(r => r['Nama Barang']?.toLowerCase().includes(search) || r['Nama Supplier']?.toLowerCase().includes(search));
+        document.getElementById('restocksTable').innerHTML = filtered.map(r => `
+            <tr class="border-b border-glass-border"><td>${r.Tanggal}</td><td>${r['Nama Barang']}</td><td class="text-emerald-400">+${r['Jumlah Masuk']}</td><td>${r['Nama Supplier']}</td><td class="text-neon-cyan">${formatCurrency(r['Total Modal'])}</td></tr>
+        `).join('');
+    }
+
+    function openRestockModal() {
+        const kode = prompt('Kode Barang:');
+        const product = products.find(p => p['Kode Barang'] === kode);
+        if (!product) { showToast('Produk tidak ditemukan', 'error'); return; }
+        const qty = parseInt(prompt('Jumlah Masuk:'));
+        if (!qty) return;
+        const harga = parseInt(prompt('Harga Beli Satuan:'));
+        const supplier = prompt('Nama Supplier:');
+        const tanggal = new Date().toISOString().split('T')[0];
+        const total = qty * harga;
+        
+        apiCall('append', 'PEMBELIAN / RESTOCK', { row: [tanggal, kode, product['Nama Barang'], qty, harga, total, supplier, '-'] }).then(async r => {
+            if (r.success) {
+                // Update stock
+                const newStock = product['Stok Saat Ini'] + qty;
+                const updateRow = [product['Kode Barang'], product['Nama Barang'], product.Kategori, product.Satuan, product['Harga Beli Modal'], product['Harga Jual'], product['Stok Awal'], newStock, newStock <= 5 ? '⚠️ RESTOCK' : '✅ Aman'];
+                await apiCall('update', 'MASTER BARANG', { rowIndex: product._rowIndex, row: updateRow });
+                showToast('Restock berhasil!');
+                await loadAllData();
+                renderRestocksTable();
+                renderPOS();
+            }
+        });
+    }
+
+    // ============================================
+    // OPERATIONAL EXPENSES
+    // ============================================
+    function renderOperationalPage() {
+        const monthTotal = expenses.filter(e => e.Tanggal?.startsWith(new Date().toISOString().slice(0,7))).reduce((s,e) => s + (e['Jumlah Uang'] || 0), 0);
+        const allTotal = expenses.reduce((s,e) => s + (e['Jumlah Uang'] || 0), 0);
+        document.getElementById('expenseMonth').innerHTML = formatCurrency(monthTotal);
+        document.getElementById('expenseTotal').innerHTML = formatCurrency(allTotal);
+        renderExpensesTable();
+    }
+
+    function renderExpensesTable() {
+        const search = document.getElementById('expenseSearch')?.value.toLowerCase() || '';
+        const filtered = expenses.filter(e => e.Kategori?.toLowerCase().includes(search) || e.Keterangan?.toLowerCase().includes(search));
+        document.getElementById('expensesTable').innerHTML = filtered.map(e => `
+            <tr class="border-b border-glass-border"><td>${e.Tanggal}</td><td>${e.Kategori}</td><td>${e.Keterangan}</td><td class="text-red-400">-${formatCurrency(e['Jumlah Uang'])}</td>
+            <td><button class="text-red-400" onclick="deleteExpense(${e._rowIndex})">🗑️</button></td></tr>
+        `).join('');
+    }
+
+    function openExpenseModal() {
+        const tanggal = new Date().toISOString().split('T')[0];
+        const kategori = prompt('Kategori (Listrik/Air/Sewa/Gaji/dll):');
+        if (!kategori) return;
+        const keterangan = prompt('Keterangan:');
+        const jumlah = parseInt(prompt('Jumlah Uang:'));
+        apiCall('append', 'PENGELUARAN OPERASIONAL', { row: [tanggal, kategori, keterangan, jumlah, '-'] }).then(async r => {
+            if (r.success) { showToast('Pengeluaran tersimpan'); await loadAllData(); renderOperationalPage(); }
+        });
+    }
+
+    async function deleteExpense(rowIndex) {
+        if (!confirm('Hapus pengeluaran?')) return;
+        const r = await apiCall('delete', 'PENGELUARAN OPERASIONAL', { rowIndex });
+        if (r.success) { showToast('Dihapus'); await loadAllData(); renderOperationalPage(); }
+    }
+
+    // ============================================
+    // INIT
+    // ============================================
+    async function init() {
+        const connected = await loadAllData();
+        if (connected) {
+            showPage('dashboard');
+        } else {
+            document.getElementById('connectionStatus').innerHTML = '❌ Gagal konek ke Google Sheets. Periksa URL dan deploy Apps Script.';
+        }
+    }
+    
+    init();
+</script>
 </body>
 </html>
