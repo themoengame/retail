@@ -4,54 +4,63 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistem Toko Kelontong</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { --bg: #f8fafc; --card: #fff; --primary: #2563eb; --text: #1e293b; --border: #e2e8f0; }
+    :root { --bg: #f8fafc; --card: #fff; --primary: #2563eb; --text: #1e293b; --border: #e2e8f0; --danger: #dc2626; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
     body { background: var(--bg); color: var(--text); padding: 15px; max-width: 1200px; margin: 0 auto; }
-    
-    /* Navigation */
-    nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-    .tab-btn { padding: 10px 18px; border: none; background: #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap; transition: 0.2s; }
+    nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; flex-wrap: wrap; }
+    .tab-btn { padding: 10px 14px; border: none; background: #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.2s; }
     .tab-btn.active { background: var(--primary); color: #fff; }
-    .tab-btn:hover:not(.active) { background: #cbd5e1; }
-
-    /* Content & Tables */
     .section { background: var(--card); padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 20px; display: none; }
     .section.active { display: block; }
-    h2 { margin-bottom: 15px; font-size: 1.3rem; }
+    h2 { margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
     th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
     th { background: #f1f5f9; font-weight: 600; }
     .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
     .badge.ok { background: #dcfce7; color: #166534; }
     .badge.warn { background: #fee2e2; color: #b91c1c; }
-    
-    /* Dashboard Stats */
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.9rem; margin-bottom: 4px; font-weight: 500; }
+    .form-control { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+    .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .stat-card { background: var(--card); padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); }
     .stat-card h4 { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; }
     .stat-card span { font-size: 1.5rem; font-weight: 700; }
-
-    /* Utility */
+    .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); }
     #loader { text-align: center; padding: 40px; color: #64748b; }
-    #error-msg { background: #fee2e2; color: #b91c1c; padding: 12px; border-radius: 6px; margin-bottom: 15px; display: none; }
+    #error-msg { background: #fee2e2; color: var(--danger); padding: 12px; border-radius: 6px; margin-bottom: 15px; display: none; }
     .empty { text-align: center; padding: 20px; color: #94a3b8; }
-    .search-box { padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; width: 100%; max-width: 300px; }
-    .btn-export { background: var(--primary); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; margin-bottom: 10px; }
-    @media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-content { background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .close-modal { float: right; cursor: pointer; font-size: 1.5rem; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <header>
     <h1>📦 Sistem Toko Kelontong</h1>
-    <p id="last-sync" style="color:#64748b; font-size:0.9rem; margin-bottom:10px;">Memuat data...</p>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin: 10px 0;">
+      <span>📅 Filter:</span>
+      <input type="date" id="date-start" class="form-control" style="width:auto;">
+      <span>-</span>
+      <input type="date" id="date-end" class="form-control" style="width:auto;">
+      <button class="btn btn-primary" onclick="applyFilter()">Terapkan</button>
+      <span id="last-sync" style="margin-left:auto; color:#64748b; font-size:0.9rem;">Memuat...</span>
+    </div>
   </header>
 
   <nav id="tabs">
     <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
-    <button class="tab-btn" data-tab="stok">📦 Stok</button>
-    <button class="tab-btn" data-tab="penjualan">🛒 Penjualan</button>
-    <button class="tab-btn" data-tab="pembelian">📥 Pembelian</button>
+    <button class="tab-btn" data-tab="kasir">🛒 Kasir</button>
+    <button class="tab-btn" data-tab="gudang">📦 Gudang</button>
+    <button class="tab-btn" data-tab="stok">📋 Stok</button>
+    <button class="tab-btn" data-tab="master">👥 Master Data</button>
     <button class="tab-btn" data-tab="laporan">📈 Laporan</button>
   </nav>
 
@@ -61,41 +70,80 @@
   <main id="content">
     <!-- DASHBOARD -->
     <section id="dashboard" class="section active">
-      <div class="stats">
-        <div class="stat-card"><h4>Stok Aman</h4><span id="d-stok-aman">0</span></div>
-        <div class="stat-card" style="border-left-color:#dc2626;"><h4>Stok Menipis</h4><span id="d-stok-warn">0</span></div>
-        <div class="stat-card"><h4>Penjualan Hari Ini</h4><span id="d-jual">Rp 0</span></div>
-        <div class="stat-card"><h4>Total Pengeluaran</h4><span id="d-out">Rp 0</span></div>
+      <div class="grid-3" id="stats-container"></div>
+      <div class="grid-2">
+        <div><canvas id="chart-sales"></canvas></div>
+        <div><canvas id="chart-top"></canvas></div>
       </div>
-      <h2>🕒 5 Transaksi Terakhir</h2>
-      <table><thead><tr><th>Tanggal</th><th>Barang</th><th>Qty</th><th>Total</th></tr></thead><tbody id="t-recent"></tbody></table>
+    </section>
+
+    <!-- KASIR -->
+    <section id="kasir" class="section">
+      <div class="grid-2">
+        <div>
+          <input type="text" id="pos-search" class="form-control" placeholder="🔍 Cari barang (kode/nama)">
+          <div id="pos-results" style="max-height: 300px; overflow-y: auto; margin-top: 10px;"></div>
+        </div>
+        <div>
+          <h3>🛒 Keranjang</h3>
+          <div id="cart-list" style="margin: 10px 0;"></div>
+          <div class="form-group"><label>Total</label><input type="text" id="cart-total" class="form-control" readonly></div>
+          <div class="grid-2">
+            <select id="pay-method" class="form-control">
+              <option value="Tunai">Tunai</option><option value="QRIS">QRIS</option><option value="Transfer">Transfer</option>
+            </select>
+            <select id="pos-customer" class="form-control"><option value="Umum">Pelanggan Umum</option></select>
+          </div>
+          <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="checkout()">✅ Checkout</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GUDANG -->
+    <section id="gudang" class="section">
+      <div class="grid-2">
+        <div>
+          <h3>📥 Input Restock</h3>
+          <div class="form-group"><label>Tanggal</label><input type="date" id="beli-tanggal" class="form-control"></div>
+          <div class="form-group"><label>Kode Barang</label><input type="text" id="beli-kode" class="form-control"></div>
+          <div class="form-group"><label>Jumlah Masuk</label><input type="number" id="beli-qty" class="form-control"></div>
+          <div class="form-group"><label>Harga Beli Satuan</label><input type="number" id="beli-harga" class="form-control"></div>
+          <div class="form-group"><label>Supplier</label><select id="beli-supplier" class="form-control"></select></div>
+          <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="submitRestock()">📥 Simpan Restock</button>
+        </div>
+        <div><h3>📋 Riwayat Restock</h3><div id="beli-history" style="max-height: 400px; overflow-y: auto;"></div></div>
+      </div>
     </section>
 
     <!-- STOK -->
     <section id="stok" class="section">
-      <input type="text" id="search-stok" class="search-box" placeholder="🔍 Cari nama/kode barang...">
+      <input type="text" id="search-stok" class="form-control" placeholder="🔍 Cari barang..." style="margin-bottom:10px;">
       <table><thead><tr><th>Kode</th><th>Nama</th><th>Kategori</th><th>Stok</th><th>Status</th></tr></thead><tbody id="t-stok"></tbody></table>
     </section>
 
-    <!-- PENJUALAN -->
-    <section id="penjualan" class="section">
-      <h2>🛒 Riwayat Penjualan</h2>
-      <table><thead><tr><th>Tanggal</th><th>Invoice</th><th>Kode</th><th>Barang</th><th>Qty</th><th>Total</th><th>Bayar</th></tr></thead><tbody id="t-jual"></tbody></table>
-    </section>
-
-    <!-- PEMBELIAN -->
-    <section id="pembelian" class="section">
-      <h2>📥 Riwayat Pembelian/Restock</h2>
-      <table><thead><tr><th>Tanggal</th><th>Kode</th><th>Barang</th><th>Masuk</th><th>Harga Beli</th><th>Total Modal</th><th>Supplier</th></tr></thead><tbody id="t-beli"></tbody></table>
+    <!-- MASTER DATA -->
+    <section id="master" class="section">
+      <div class="grid-2">
+        <div><h3>👥 Pelanggan</h3><button class="btn btn-primary" style="margin:5px 0;" onclick="openCRUD('pelanggan')">+ Tambah</button><div id="list-pelanggan"></div></div>
+        <div><h3>🏭 Supplier</h3><button class="btn btn-primary" style="margin:5px 0;" onclick="openCRUD('supplier')">+ Tambah</button><div id="list-supplier"></div></div>
+      </div>
     </section>
 
     <!-- LAPORAN -->
     <section id="laporan" class="section">
-      <button class="btn-export" onclick="exportCSV()">📥 Export Laporan ke CSV</button>
-      <h2>📈 Ringkasan Keuangan</h2>
-      <table><thead><tr><th>Metrik</th><th>Total</th></tr></thead><tbody id="t-laporan"></tbody></table>
+      <h2>📈 Ringkasan Periode</h2>
+      <table id="report-table"><thead><tr><th>Metrik</th><th>Total</th></tr></thead><tbody id="t-laporan"></tbody></table>
     </section>
   </main>
+
+  <!-- MODAL CRUD -->
+  <div id="crud-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <h3 id="modal-title">Tambah Data</h3>
+      <form id="crud-form" style="margin-top:15px;"></form>
+    </div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>
