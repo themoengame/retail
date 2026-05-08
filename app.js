@@ -6,6 +6,11 @@ $(document).ready(function() {
     loadAllData();
     updateClock();
     setInterval(updateClock, 1000);
+    
+    // Search product listener
+    $(document).on('keyup', '#searchProduct', function() {
+        displayProductListForPOS();
+    });
 });
 
 function updateClock() {
@@ -13,71 +18,112 @@ function updateClock() {
     $('#currentTime').text(now.toLocaleString('id-ID'));
 }
 
-function loadAllData() {
-    loadProducts();
-    loadCustomers();
-    loadSuppliers();
-    loadRestocks();
+async function loadAllData() {
+    showLoading(true);
+    try {
+        await Promise.all([
+            loadProducts(),
+            loadCustomers(),
+            loadSuppliers(),
+            loadRestocks(),
+            loadTransactions()
+        ]);
+        showNotification('Data berhasil dimuat dari Google Sheets', 'success');
+    } catch (error) {
+        console.error('Error loading data:', error);
+        showNotification('Gagal memuat data dari Google Sheets', 'error');
+    } finally {
+        showLoading(false);
+    }
 }
 
-function syncAllData() {
-    loadAllData();
-    showNotification('Data berhasil disinkronkan dengan Google Sheets', 'success');
+function showLoading(show) {
+    if (show) {
+        $('#loadingOverlay').show();
+    } else {
+        $('#loadingOverlay').hide();
+    }
 }
 
 // ==========================================
 // GOOGLE SHEETS API INTEGRATION
 // ==========================================
 
-async function callGoogleSheetsAPI(action, data = {}) {
+async function fetchSheetData(sheetName) {
     try {
         const response = await fetch(CONFIG.WEB_APP_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json',
             },
+            mode: 'cors',
             body: JSON.stringify({
-                action: action,
-                data: data,
-                timestamp: new Date().toISOString()
+                action: 'get',
+                sheet: sheetName
             })
         });
         
-        // Karena mode no-cors, kita tidak bisa mendapatkan response
-        // Simpan data ke localStorage untuk offline support
-        saveToLocalStorage(action, data);
-        return { success: true };
+        const result = await response.json();
+        if (result.success) {
+            return result.data;
+        } else {
+            throw new Error(result.error);
+        }
     } catch (error) {
-        console.error('Error calling API:', error);
-        // Offline mode - save to localStorage
-        saveToLocalStorage(action, data);
-        showNotification('Mode offline: Data disimpan lokal', 'warning');
-        return { success: false, offline: true };
+        console.error(`Error fetching ${sheetName}:`, error);
+        return [];
     }
 }
 
-function saveToLocalStorage(action, data) {
-    let offlineData = JSON.parse(localStorage.getItem('offlineData') || '[]');
-    offlineData.push({
-        action: action,
-        data: data,
-        timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('offlineData', JSON.stringify(offlineData));
+async function saveToSheet(sheetName, rowData, action = 'append', rowIndex = null) {
+    try {
+        const payload = {
+            action: action,
+            sheet: sheetName,
+            row: rowData
+        };
+        
+        if (action === 'update' && rowIndex) {
+            payload.rowIndex = rowIndex;
+        } else if (action === 'delete' && rowIndex) {
+            payload.rowIndex = rowIndex;
+        }
+        
+        const response = await fetch(CONFIG.WEB_APP_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            mode: 'cors',
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        return result.success;
+    } catch (error) {
+        console.error('Error saving to sheet:', error);
+        showNotification('Gagal menyimpan data', 'error');
+        return false;
+    }
 }
 
 // ==========================================
 // PRODUCT MANAGEMENT (CRUD)
 // ==========================================
 
-function loadProducts() {
-    // Demo data untuk testing
-    products = [
-        { kode: 'BRG001', nama: 'Beras Premium 5kg', kategori: 'Sembako', satuan: 'Pcs', hargaBeli: 75000, hargaJual: 85000, stok: 50, status: 'Aman' },
-        { kode: 'BRG002', nama: 'Minyak Goreng 2L', kategori: 'Sembako', satuan: 'Pcs', hargaBeli: 25000, hargaJual: 30000, stok: 30, status: 'Aman' },
-        { kode: 'BRG003', nama: 'Gula Pasir 1kg', kategori: 'Sembako', satuan: 'Pcs', hargaBeli: 13000, hargaJual: 15000, stok: 3, status: '⚠️ RESTOCK' }
-    ];
+async function loadProducts() {
+    const data = await fetchSheetData(CONFIG.SHEET_NAMES.MASTER_BARANG);
+    dataCache.products = data.map(row => ({
+        kode: row['Kode Barang'] || '',
+        nama: row['Nama Barang'] || '',
+        kategori: row['Kategori'] || '',
+        satuan: row['Satuan'] || '',
+        hargaBeli: parseInt(row['Harga Beli Modal']) || 0,
+        hargaJual: parseInt(row['Harga Jual']) || 0,
+        stokAwal: parseInt(row['Stok Awal']) || 0,
+        stokSaatIni: parseInt(row['Stok Saat Ini']) || 0,
+        statusStok: row['Status Stok'] || 'Aman'
+    }));
     displayProducts();
 }
 
@@ -85,7 +131,7 @@ function displayProducts() {
     const tbody = $('#productsBody');
     tbody.empty();
     
-    products.forEach(product => {
+    dataCache.products.forEach((product, index) => {
         const row = `
             <tr>
                 <td>${product.kode}</td>
@@ -94,10 +140,10 @@ function displayProducts() {
                 <td>${product.satuan || '-'}</td>
                 <td>${formatRupiah(product.hargaBeli)}</td>
                 <td>${formatRupiah(product.hargaJual)}</td>
-                <td>${product.stok}</td>
-                <td class="${product.status === '⚠️ RESTOCK' ? 'text-danger fw-bold' : ''}">${product.status}</td>
+                <td>${product.stokSaatIni}</td>
+                <td class="${product.statusStok === '⚠️ RESTOCK' ? 'text-danger fw-bold' : 'text-success'}">${product.statusStok}</td>
                 <td>
-                    <button class="btn btn-sm btn-warning" onclick="editProduct('${product.kode}')">
+                    <button class="btn btn-sm btn-warning" onclick='editProduct(${JSON.stringify(product)})'>
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.kode}')">
@@ -109,13 +155,12 @@ function displayProducts() {
         tbody.append(row);
     });
     
-    // Display product list for POS
     displayProductListForPOS();
 }
 
 function displayProductListForPOS() {
     const searchTerm = $('#searchProduct').val().toLowerCase();
-    const filtered = products.filter(p => 
+    const filtered = dataCache.products.filter(p => 
         p.kode.toLowerCase().includes(searchTerm) || 
         p.nama.toLowerCase().includes(searchTerm)
     );
@@ -129,9 +174,9 @@ function displayProductListForPOS() {
                 <td>${product.kode}</td>
                 <td>${product.nama}</td>
                 <td>${formatRupiah(product.hargaJual)}</td>
-                <td>${product.stok}</td>
+                <td>${product.stokSaatIni}</td>
                 <td>
-                    <button class="btn btn-sm btn-success" onclick="addToCart('${product.kode}')" ${product.stok <= 0 ? 'disabled' : ''}>
+                    <button class="btn btn-sm btn-success" onclick="addToCart('${product.kode}')" ${product.stokSaatIni <= 0 ? 'disabled' : ''}>
                         <i class="fas fa-plus"></i>
                     </button>
                 </td>
@@ -141,14 +186,15 @@ function displayProductListForPOS() {
     });
 }
 
-function showProductModal(editMode = false, product = null) {
-    if (editMode && product) {
+function showProductModal(product = null) {
+    if (product) {
         $('#productKode').val(product.kode);
         $('#productCode').val(product.kode);
         $('#productName').val(product.nama);
         $('#productCategory').val(product.kategori);
         $('#productUnit').val(product.satuan);
-        $('#productStock').val(product.stok);
+        $('#productStock').val(product.stokAwal);
+        $('#productStokSaatIni').val(product.stokSaatIni);
         $('#productBuyPrice').val(product.hargaBeli);
         $('#productSellPrice').val(product.hargaJual);
         $('#productCode').prop('readonly', true);
@@ -156,50 +202,88 @@ function showProductModal(editMode = false, product = null) {
         $('#productModal input').val('');
         $('#productKode').val('');
         $('#productCode').prop('readonly', false);
-        $('#productCode').val('BRG' + String(products.length + 1).padStart(3, '0'));
+        $('#productCode').val('BRG' + String(dataCache.products.length + 1).padStart(3, '0'));
+        $('#productStokSaatIni').val(0);
     }
     $('#productModal').modal('show');
 }
 
-function editProduct(kode) {
-    const product = products.find(p => p.kode === kode);
-    if (product) {
-        showProductModal(true, product);
-    }
-}
-
-function saveProduct() {
+async function saveProduct() {
+    const kode = $('#productCode').val();
+    const stokAwal = parseInt($('#productStock').val()) || 0;
+    const stokSaatIni = $('#productStokSaatIni').val() ? parseInt($('#productStokSaatIni').val()) : stokAwal;
+    
     const product = {
-        kode: $('#productCode').val(),
-        nama: $('#productName').val(),
-        kategori: $('#productCategory').val(),
-        satuan: $('#productUnit').val(),
-        hargaBeli: parseInt($('#productBuyPrice').val()) || 0,
-        hargaJual: parseInt($('#productSellPrice').val()) || 0,
-        stok: parseInt($('#productStock').val()) || 0,
-        status: parseInt($('#productStock').val()) <= 5 ? '⚠️ RESTOCK' : 'Aman'
+        'Kode Barang': kode,
+        'Nama Barang': $('#productName').val(),
+        'Kategori': $('#productCategory').val(),
+        'Satuan': $('#productUnit').val(),
+        'Harga Beli Modal': parseInt($('#productBuyPrice').val()) || 0,
+        'Harga Jual': parseInt($('#productSellPrice').val()) || 0,
+        'Stok Awal': stokAwal,
+        'Stok Saat Ini': stokSaatIni,
+        'Status Stok': stokSaatIni <= 5 ? '⚠️ RESTOCK' : '✅ Aman'
     };
     
-    const existingIndex = products.findIndex(p => p.kode === product.kode);
+    const existingIndex = dataCache.products.findIndex(p => p.kode === kode);
+    
+    let success;
     if (existingIndex >= 0) {
-        products[existingIndex] = product;
-        showNotification('Barang berhasil diupdate', 'success');
+        // Update existing
+        success = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
+            Object.values(product), 'update', existingIndex + 2);
+        if (success) {
+            dataCache.products[existingIndex] = {
+                kode: product['Kode Barang'],
+                nama: product['Nama Barang'],
+                kategori: product['Kategori'],
+                satuan: product['Satuan'],
+                hargaBeli: product['Harga Beli Modal'],
+                hargaJual: product['Harga Jual'],
+                stokAwal: product['Stok Awal'],
+                stokSaatIni: product['Stok Saat Ini'],
+                statusStok: product['Status Stok']
+            };
+            showNotification('Barang berhasil diupdate', 'success');
+        }
     } else {
-        products.push(product);
-        showNotification('Barang berhasil ditambahkan', 'success');
+        // Add new
+        success = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
+            Object.values(product), 'append');
+        if (success) {
+            dataCache.products.push({
+                kode: product['Kode Barang'],
+                nama: product['Nama Barang'],
+                kategori: product['Kategori'],
+                satuan: product['Satuan'],
+                hargaBeli: product['Harga Beli Modal'],
+                hargaJual: product['Harga Jual'],
+                stokAwal: product['Stok Awal'],
+                stokSaatIni: product['Stok Saat Ini'],
+                statusStok: product['Status Stok']
+            });
+            showNotification('Barang berhasil ditambahkan', 'success');
+        }
     }
     
-    callGoogleSheetsAPI('saveProduct', product);
-    displayProducts();
-    $('#productModal').modal('hide');
+    if (success) {
+        displayProducts();
+        $('#productModal').modal('hide');
+    }
 }
 
-function deleteProduct(kode) {
+async function deleteProduct(kode) {
     if (confirm('Yakin ingin menghapus barang ini?')) {
-        products = products.filter(p => p.kode !== kode);
-        callGoogleSheetsAPI('deleteProduct', { kode: kode });
-        displayProducts();
-        showNotification('Barang berhasil dihapus', 'success');
+        const index = dataCache.products.findIndex(p => p.kode === kode);
+        if (index >= 0) {
+            const success = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
+                null, 'delete', index + 2);
+            if (success) {
+                dataCache.products.splice(index, 1);
+                displayProducts();
+                showNotification('Barang berhasil dihapus', 'success');
+            }
+        }
     }
 }
 
@@ -207,11 +291,15 @@ function deleteProduct(kode) {
 // CUSTOMER MANAGEMENT (CRUD)
 // ==========================================
 
-function loadCustomers() {
-    customers = [
-        { id: 1, nama: 'Budi Santoso', wa: '081234567890', alamat: 'Jl. Mawar No. 5', catatan: 'Pelanggan Tetap' },
-        { id: 2, nama: 'Siti Aminah', wa: '082345678901', alamat: 'Jl. Melati No. 10', catatan: 'Baru' }
-    ];
+async function loadCustomers() {
+    const data = await fetchSheetData(CONFIG.SHEET_NAMES.PELANGGAN);
+    dataCache.customers = data.map((row, idx) => ({
+        id: idx + 1,
+        nama: row['Nama'] || '',
+        wa: row['No. WA'] || '',
+        alamat: row['Alamat'] || '',
+        catatan: row['Catatan'] || ''
+    }));
     displayCustomers();
 }
 
@@ -219,7 +307,7 @@ function displayCustomers() {
     const tbody = $('#customersBody');
     tbody.empty();
     
-    customers.forEach(customer => {
+    dataCache.customers.forEach((customer, index) => {
         const row = `
             <tr>
                 <td>${customer.id}</td>
@@ -228,10 +316,10 @@ function displayCustomers() {
                 <td>${customer.alamat || '-'}</td>
                 <td>${customer.catatan || '-'}</td>
                 <td>
-                    <button class="btn btn-sm btn-warning" onclick="editCustomer(${customer.id})">
+                    <button class="btn btn-sm btn-warning" onclick='editCustomer(${JSON.stringify(customer)})'>
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${customer.id})">
+                    <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${index})">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -241,8 +329,8 @@ function displayCustomers() {
     });
 }
 
-function showCustomerModal(editMode = false, customer = null) {
-    if (editMode && customer) {
+function showCustomerModal(customer = null) {
+    if (customer) {
         $('#customerId').val(customer.id);
         $('#customerName').val(customer.nama);
         $('#customerPhone').val(customer.wa);
@@ -255,42 +343,65 @@ function showCustomerModal(editMode = false, customer = null) {
     $('#customerModal').modal('show');
 }
 
-function editCustomer(id) {
-    const customer = customers.find(c => c.id === id);
-    if (customer) {
-        showCustomerModal(true, customer);
-    }
-}
-
-function saveCustomer() {
+async function saveCustomer() {
     const customer = {
-        id: $('#customerId').val() || Date.now(),
-        nama: $('#customerName').val(),
-        wa: $('#customerPhone').val(),
-        alamat: $('#customerAddress').val(),
-        catatan: $('#customerNote').val()
+        'Nama': $('#customerName').val(),
+        'No. WA': $('#customerPhone').val(),
+        'Alamat': $('#customerAddress').val(),
+        'Catatan': $('#customerNote').val()
     };
     
-    const existingIndex = customers.findIndex(c => c.id == customer.id);
-    if (existingIndex >= 0) {
-        customers[existingIndex] = customer;
-        showNotification('Pelanggan berhasil diupdate', 'success');
+    const id = $('#customerId').val();
+    let success;
+    
+    if (id) {
+        // Update existing
+        const index = parseInt(id) - 1;
+        success = await saveToSheet(CONFIG.SHEET_NAMES.PELANGGAN, 
+            Object.values(customer), 'update', index + 2);
+        if (success) {
+            dataCache.customers[index] = {
+                id: parseInt(id),
+                nama: customer['Nama'],
+                wa: customer['No. WA'],
+                alamat: customer['Alamat'],
+                catatan: customer['Catatan']
+            };
+            showNotification('Pelanggan berhasil diupdate', 'success');
+        }
     } else {
-        customers.push(customer);
-        showNotification('Pelanggan berhasil ditambahkan', 'success');
+        // Add new
+        success = await saveToSheet(CONFIG.SHEET_NAMES.PELANGGAN, 
+            Object.values(customer), 'append');
+        if (success) {
+            dataCache.customers.push({
+                id: dataCache.customers.length + 1,
+                nama: customer['Nama'],
+                wa: customer['No. WA'],
+                alamat: customer['Alamat'],
+                catatan: customer['Catatan']
+            });
+            showNotification('Pelanggan berhasil ditambahkan', 'success');
+        }
     }
     
-    callGoogleSheetsAPI('saveCustomer', customer);
-    displayCustomers();
-    $('#customerModal').modal('hide');
+    if (success) {
+        displayCustomers();
+        $('#customerModal').modal('hide');
+    }
 }
 
-function deleteCustomer(id) {
+async function deleteCustomer(index) {
     if (confirm('Yakin ingin menghapus pelanggan ini?')) {
-        customers = customers.filter(c => c.id != id);
-        callGoogleSheetsAPI('deleteCustomer', { id: id });
-        displayCustomers();
-        showNotification('Pelanggan berhasil dihapus', 'success');
+        const success = await saveToSheet(CONFIG.SHEET_NAMES.PELANGGAN, 
+            null, 'delete', index + 2);
+        if (success) {
+            dataCache.customers.splice(index, 1);
+            // Re-index IDs
+            dataCache.customers.forEach((c, i) => c.id = i + 1);
+            displayCustomers();
+            showNotification('Pelanggan berhasil dihapus', 'success');
+        }
     }
 }
 
@@ -298,11 +409,15 @@ function deleteCustomer(id) {
 // SUPPLIER MANAGEMENT (CRUD)
 // ==========================================
 
-function loadSuppliers() {
-    suppliers = [
-        { id: 1, nama: 'PT Grosir Jaya', alamat: 'Jl. Industri No. 10', kontak: '021-5551234', catatan: 'Supplier Utama' },
-        { id: 2, nama: 'UD Sumber Rezeki', alamat: 'Jl. Pasar Baru No. 5', kontak: '08123456789', catatan: 'Supplier Beras' }
-    ];
+async function loadSuppliers() {
+    const data = await fetchSheetData(CONFIG.SHEET_NAMES.SUPPLIER);
+    dataCache.suppliers = data.map((row, idx) => ({
+        id: idx + 1,
+        nama: row['Nama'] || '',
+        alamat: row['Alamat'] || '',
+        kontak: row['Kontak'] || '',
+        catatan: row['Catatan'] || ''
+    }));
     displaySuppliers();
 }
 
@@ -310,7 +425,7 @@ function displaySuppliers() {
     const tbody = $('#suppliersBody');
     tbody.empty();
     
-    suppliers.forEach(supplier => {
+    dataCache.suppliers.forEach((supplier, index) => {
         const row = `
             <tr>
                 <td>${supplier.id}</td>
@@ -319,10 +434,10 @@ function displaySuppliers() {
                 <td>${supplier.kontak || '-'}</td>
                 <td>${supplier.catatan || '-'}</td>
                 <td>
-                    <button class="btn btn-sm btn-warning" onclick="editSupplier(${supplier.id})">
+                    <button class="btn btn-sm btn-warning" onclick='editSupplier(${JSON.stringify(supplier)})'>
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${supplier.id})">
+                    <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${index})">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -331,7 +446,6 @@ function displaySuppliers() {
         tbody.append(row);
     });
     
-    // Update supplier dropdown in restock modal
     updateSupplierDropdown();
 }
 
@@ -339,13 +453,13 @@ function updateSupplierDropdown() {
     const select = $('#restockSupplier');
     select.empty();
     select.append('<option value="">Pilih Supplier...</option>');
-    suppliers.forEach(supplier => {
+    dataCache.suppliers.forEach(supplier => {
         select.append(`<option value="${supplier.nama}">${supplier.nama}</option>`);
     });
 }
 
-function showSupplierModal(editMode = false, supplier = null) {
-    if (editMode && supplier) {
+function showSupplierModal(supplier = null) {
+    if (supplier) {
         $('#supplierId').val(supplier.id);
         $('#supplierName').val(supplier.nama);
         $('#supplierAddress').val(supplier.alamat);
@@ -358,42 +472,64 @@ function showSupplierModal(editMode = false, supplier = null) {
     $('#supplierModal').modal('show');
 }
 
-function editSupplier(id) {
-    const supplier = suppliers.find(s => s.id === id);
-    if (supplier) {
-        showSupplierModal(true, supplier);
-    }
-}
-
-function saveSupplier() {
+async function saveSupplier() {
     const supplier = {
-        id: $('#supplierId').val() || Date.now(),
-        nama: $('#supplierName').val(),
-        alamat: $('#supplierAddress').val(),
-        kontak: $('#supplierContact').val(),
-        catatan: $('#supplierNote').val()
+        'Nama': $('#supplierName').val(),
+        'Alamat': $('#supplierAddress').val(),
+        'Kontak': $('#supplierContact').val(),
+        'Catatan': $('#supplierNote').val()
     };
     
-    const existingIndex = suppliers.findIndex(s => s.id == supplier.id);
-    if (existingIndex >= 0) {
-        suppliers[existingIndex] = supplier;
-        showNotification('Supplier berhasil diupdate', 'success');
+    const id = $('#supplierId').val();
+    let success;
+    
+    if (id) {
+        // Update existing
+        const index = parseInt(id) - 1;
+        success = await saveToSheet(CONFIG.SHEET_NAMES.SUPPLIER, 
+            Object.values(supplier), 'update', index + 2);
+        if (success) {
+            dataCache.suppliers[index] = {
+                id: parseInt(id),
+                nama: supplier['Nama'],
+                alamat: supplier['Alamat'],
+                kontak: supplier['Kontak'],
+                catatan: supplier['Catatan']
+            };
+            showNotification('Supplier berhasil diupdate', 'success');
+        }
     } else {
-        suppliers.push(supplier);
-        showNotification('Supplier berhasil ditambahkan', 'success');
+        // Add new
+        success = await saveToSheet(CONFIG.SHEET_NAMES.SUPPLIER, 
+            Object.values(supplier), 'append');
+        if (success) {
+            dataCache.suppliers.push({
+                id: dataCache.suppliers.length + 1,
+                nama: supplier['Nama'],
+                alamat: supplier['Alamat'],
+                kontak: supplier['Kontak'],
+                catatan: supplier['Catatan']
+            });
+            showNotification('Supplier berhasil ditambahkan', 'success');
+        }
     }
     
-    callGoogleSheetsAPI('saveSupplier', supplier);
-    displaySuppliers();
-    $('#supplierModal').modal('hide');
+    if (success) {
+        displaySuppliers();
+        $('#supplierModal').modal('hide');
+    }
 }
 
-function deleteSupplier(id) {
+async function deleteSupplier(index) {
     if (confirm('Yakin ingin menghapus supplier ini?')) {
-        suppliers = suppliers.filter(s => s.id != id);
-        callGoogleSheetsAPI('deleteSupplier', { id: id });
-        displaySuppliers();
-        showNotification('Supplier berhasil dihapus', 'success');
+        const success = await saveToSheet(CONFIG.SHEET_NAMES.SUPPLIER, 
+            null, 'delete', index + 2);
+        if (success) {
+            dataCache.suppliers.splice(index, 1);
+            dataCache.suppliers.forEach((s, i) => s.id = i + 1);
+            displaySuppliers();
+            showNotification('Supplier berhasil dihapus', 'success');
+        }
     }
 }
 
@@ -401,10 +537,18 @@ function deleteSupplier(id) {
 // RESTOCK MANAGEMENT
 // ==========================================
 
-function loadRestocks() {
-    restocks = [
-        { tanggal: '2026-05-07', kodeBarang: 'BRG001', namaBarang: 'Beras Premium 5kg', jumlah: 10, hargaBeli: 72000, total: 720000, supplier: 'PT Grosir Jaya', keterangan: 'Restock rutin' }
-    ];
+async function loadRestocks() {
+    const data = await fetchSheetData(CONFIG.SHEET_NAMES.PEMBELIAN_RESTOCK);
+    dataCache.restocks = data.map(row => ({
+        tanggal: row['Tanggal'] || '',
+        kodeBarang: row['Kode Barang'] || '',
+        namaBarang: row['Nama Barang'] || '',
+        jumlah: parseInt(row['Jumlah Masuk']) || 0,
+        hargaBeli: parseInt(row['Harga Beli Satuan']) || 0,
+        total: parseInt(row['Total Modal']) || 0,
+        supplier: row['Nama Supplier'] || '',
+        keterangan: row['Keterangan'] || ''
+    }));
     displayRestocks();
 }
 
@@ -412,7 +556,7 @@ function displayRestocks() {
     const tbody = $('#restockBody');
     tbody.empty();
     
-    restocks.forEach(restock => {
+    dataCache.restocks.forEach(restock => {
         const row = `
             <tr>
                 <td>${restock.tanggal}</td>
@@ -439,14 +583,14 @@ function updateProductDropdown() {
     const select = $('#restockProduct');
     select.empty();
     select.append('<option value="">Pilih Barang...</option>');
-    products.forEach(product => {
+    dataCache.products.forEach(product => {
         select.append(`<option value="${product.kode}" data-harga="${product.hargaBeli}">${product.kode} - ${product.nama}</option>`);
     });
 }
 
 function updateRestockInfo() {
     const kode = $('#restockProduct').val();
-    const product = products.find(p => p.kode === kode);
+    const product = dataCache.products.find(p => p.kode === kode);
     if (product) {
         $('#restockPrice').val(product.hargaBeli);
     } else {
@@ -454,56 +598,119 @@ function updateRestockInfo() {
     }
 }
 
-function saveRestock() {
+async function saveRestock() {
     const kode = $('#restockProduct').val();
-    const product = products.find(p => p.kode === kode);
+    const product = dataCache.products.find(p => p.kode === kode);
     
     if (!product) {
         showNotification('Pilih barang terlebih dahulu', 'error');
         return;
     }
     
+    const jumlah = parseInt($('#restockQuantity').val());
+    const hargaBeli = parseInt($('#restockPrice').val());
+    const total = jumlah * hargaBeli;
+    
     const restock = {
-        tanggal: new Date().toISOString().split('T')[0],
-        kodeBarang: kode,
-        namaBarang: product.nama,
-        jumlah: parseInt($('#restockQuantity').val()),
-        hargaBeli: parseInt($('#restockPrice').val()),
-        total: parseInt($('#restockQuantity').val()) * parseInt($('#restockPrice').val()),
-        supplier: $('#restockSupplier').val(),
-        keterangan: $('#restockNote').val()
+        'Tanggal': new Date().toISOString().split('T')[0],
+        'Kode Barang': kode,
+        'Nama Barang': product.nama,
+        'Jumlah Masuk': jumlah,
+        'Harga Beli Satuan': hargaBeli,
+        'Total Modal': total,
+        'Nama Supplier': $('#restockSupplier').val(),
+        'Keterangan': $('#restockNote').val()
     };
     
-    // Update product stock
-    product.stok += restock.jumlah;
-    product.status = product.stok <= 5 ? '⚠️ RESTOCK' : 'Aman';
+    // Save restock to sheet
+    const success = await saveToSheet(CONFIG.SHEET_NAMES.PEMBELIAN_RESTOCK, 
+        Object.values(restock), 'append');
     
-    restocks.unshift(restock);
-    
-    callGoogleSheetsAPI('saveRestock', restock);
-    callGoogleSheetsAPI('updateProductStock', { kode: kode, stok: product.stok });
-    
-    displayProducts();
-    displayRestocks();
-    $('#restockModal').modal('hide');
-    showNotification('Restock berhasil diproses', 'success');
+    if (success) {
+        // Update product stock
+        const newStok = product.stokSaatIni + jumlah;
+        const statusStok = newStok <= 5 ? '⚠️ RESTOCK' : '✅ Aman';
+        
+        const productUpdate = {
+            'Kode Barang': product.kode,
+            'Nama Barang': product.nama,
+            'Kategori': product.kategori,
+            'Satuan': product.satuan,
+            'Harga Beli Modal': product.hargaBeli,
+            'Harga Jual': product.hargaJual,
+            'Stok Awal': product.stokAwal,
+            'Stok Saat Ini': newStok,
+            'Status Stok': statusStok
+        };
+        
+        const productIndex = dataCache.products.findIndex(p => p.kode === kode);
+        const updateSuccess = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
+            Object.values(productUpdate), 'update', productIndex + 2);
+        
+        if (updateSuccess) {
+            product.stokSaatIni = newStok;
+            product.statusStok = statusStok;
+            
+            dataCache.restocks.unshift({
+                tanggal: restock['Tanggal'],
+                kodeBarang: kode,
+                namaBarang: product.nama,
+                jumlah: jumlah,
+                hargaBeli: hargaBeli,
+                total: total,
+                supplier: restock['Nama Supplier'],
+                keterangan: restock['Keterangan']
+            });
+            
+            displayProducts();
+            displayRestocks();
+            $('#restockModal').modal('hide');
+            showNotification('Restock berhasil diproses', 'success');
+        }
+    }
+}
+
+// ==========================================
+// TRANSACTIONS
+// ==========================================
+
+async function loadTransactions() {
+    const data = await fetchSheetData(CONFIG.SHEET_NAMES.TRANSAKSI_PENJUALAN);
+    dataCache.transactions = data.map(row => ({
+        tanggal: row['Tanggal'] || '',
+        jam: row['Jam'] || '',
+        invoice: row['No. Invoice'] || '',
+        kodeBarang: row['Kode Barang'] || '',
+        namaBarang: row['Nama Barang'] || '',
+        hargaJual: parseInt(row['Harga Jual']) || 0,
+        jumlahBeli: parseInt(row['Jumlah Beli']) || 0,
+        totalHarga: parseInt(row['Total Harga']) || 0,
+        metodeBayar: row['Metode Bayar'] || '',
+        kasir: row['Kasir'] || ''
+    }));
 }
 
 // ==========================================
 // POS / CART MANAGEMENT
 // ==========================================
 
+let cart = [];
+
 function addToCart(kode) {
-    const product = products.find(p => p.kode === kode);
-    if (!product || product.stok <= 0) {
+    const product = dataCache.products.find(p => p.kode === kode);
+    if (!product || product.stokSaatIni <= 0) {
         showNotification('Stok tidak tersedia!', 'error');
         return;
     }
     
     const existingItem = cart.find(item => item.kode === kode);
     if (existingItem) {
-        existingItem.qty++;
-        existingItem.subtotal = existingItem.qty * existingItem.hargaJual;
+        if (existingItem.qty + 1 <= product.stokSaatIni) {
+            existingItem.qty++;
+            existingItem.subtotal = existingItem.qty * existingItem.hargaJual;
+        } else {
+            showNotification('Stok tidak mencukupi!', 'error');
+        }
     } else {
         cart.push({
             kode: product.kode,
@@ -539,9 +746,8 @@ function displayCart() {
                     <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})">
                         <i class="fas fa-trash"></i>
                     </button>
-                </td>
-            
-            
+                 </td>
+            </tr>
         `;
         tbody.append(row);
     });
@@ -552,8 +758,8 @@ function displayCart() {
 function updateCartQty(index, qty) {
     qty = parseInt(qty);
     if (qty > 0) {
-        const product = products.find(p => p.kode === cart[index].kode);
-        if (product && qty <= product.stok) {
+        const product = dataCache.products.find(p => p.kode === cart[index].kode);
+        if (product && qty <= product.stokSaatIni) {
             cart[index].qty = qty;
             cart[index].subtotal = qty * cart[index].hargaJual;
             displayCart();
@@ -568,7 +774,7 @@ function removeFromCart(index) {
     displayCart();
 }
 
-function checkout() {
+async function checkout() {
     if (cart.length === 0) {
         showNotification('Keranjang kosong!', 'error');
         return;
@@ -581,42 +787,58 @@ function checkout() {
     const paymentMethod = $('#paymentMethod').val();
     const cashier = $('#cashierName').val();
     
-    // Create transactions
-    cart.forEach(item => {
-        const transaction = {
-            tanggal: date,
-            jam: time,
-            invoice: invoice,
-            kodeBarang: item.kode,
-            namaBarang: item.nama,
-            hargaJual: item.hargaJual,
-            jumlahBeli: item.qty,
-            totalHarga: item.subtotal,
-            metodeBayar: paymentMethod,
-            kasir: cashier
-        };
-        transactions.push(transaction);
+    let allSuccess = true;
+    
+    // Create transactions and update stock
+    for (const item of cart) {
+        const transaction = [
+            date, time, invoice, item.kode, item.nama,
+            item.hargaJual, item.qty, item.subtotal, paymentMethod, cashier
+        ];
         
-        // Update product stock
-        const product = products.find(p => p.kode === item.kode);
-        if (product) {
-            product.stok -= item.qty;
-            product.status = product.stok <= 5 ? '⚠️ RESTOCK' : 'Aman';
+        const success = await saveToSheet(CONFIG.SHEET_NAMES.TRANSAKSI_PENJUALAN, 
+            transaction, 'append');
+        
+        if (!success) {
+            allSuccess = false;
+            break;
         }
         
-        callGoogleSheetsAPI('saveTransaction', transaction);
-    });
+        // Update product stock in sheet
+        const product = dataCache.products.find(p => p.kode === item.kode);
+        if (product) {
+            const newStok = product.stokSaatIni - item.qty;
+            const statusStok = newStok <= 5 ? '⚠️ RESTOCK' : '✅ Aman';
+            
+            const productUpdate = [
+                product.kode, product.nama, product.kategori, product.satuan,
+                product.hargaBeli, product.hargaJual, product.stokAwal,
+                newStok, statusStok
+            ];
+            
+            const productIndex = dataCache.products.findIndex(p => p.kode === item.kode);
+            const updateSuccess = await saveToSheet(CONFIG.SHEET_NAMES.MASTER_BARANG, 
+                productUpdate, 'update', productIndex + 2);
+            
+            if (updateSuccess) {
+                product.stokSaatIni = newStok;
+                product.statusStok = statusStok;
+            }
+        }
+    }
     
-    callGoogleSheetsAPI('updateProductStock', { transactions: cart });
-    
-    // Print receipt
-    printReceipt(invoice, date, time, cart, total, paymentMethod, cashier);
-    
-    // Clear cart
-    cart = [];
-    displayCart();
-    displayProducts();
-    showNotification(`Transaksi berhasil! Invoice: ${invoice}`, 'success');
+    if (allSuccess) {
+        // Print receipt
+        printReceipt(invoice, date, time, cart, total, paymentMethod, cashier);
+        
+        // Clear cart and refresh display
+        cart = [];
+        displayCart();
+        displayProducts();
+        showNotification(`Transaksi berhasil! Invoice: ${invoice}`, 'success');
+    } else {
+        showNotification('Gagal memproses transaksi', 'error');
+    }
 }
 
 function printReceipt(invoice, date, time, items, total, paymentMethod, cashier) {
@@ -654,14 +876,14 @@ function printReceipt(invoice, date, time, items, total, paymentMethod, cashier)
                         </tr>
                     `).join('')}
                 </tbody>
-            }</table>
+            </table>
             <div class="line"></div>
             <div class="total">
                 <table width="100%">
                     <tr><td>Total:</td><td align="right">${formatRupiah(total)}</td></tr>
                     <tr><td>Metode Bayar:</td><td align="right">${paymentMethod}</td></tr>
                     <tr><td>Kasir:</td><td align="right">${cashier}</td></tr>
-                 </table>
+                </table>
             </div>
             <div class="line"></div>
             <div class="footer">
@@ -679,6 +901,7 @@ function printReceipt(invoice, date, time, items, total, paymentMethod, cashier)
 // ==========================================
 
 function formatRupiah(angka) {
+    if (!angka) return 'Rp 0';
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
@@ -687,11 +910,18 @@ function formatRupiah(angka) {
 }
 
 function showNotification(message, type = 'info') {
-    // Simple alert for now, can be enhanced with toast notification
+    // You can replace this with a better toast notification
     alert(message);
 }
 
-// Search product listener
-$(document).on('keyup', '#searchProduct', function() {
-    displayProductListForPOS();
+// Add loading overlay to index.html
+$(document).ready(function() {
+    $('body').append(`
+        <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:10px;">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Memuat data...</p>
+            </div>
+        </div>
+    `);
 });
