@@ -8,6 +8,13 @@ let DB = {};
 let cart = [];
 let filter = { start: '', end: '' };
 
+const MASTER_CONFIG = {
+  barang:    { title: 'Tambah Barang',    sheet: 'MASTER BARANG',         fields: ['Kode Barang','Nama Barang','Kategori','Satuan','Harga Beli','Harga Jual'] },
+  pelanggan: { title: 'Tambah Pelanggan', sheet: 'PELANGGAN',             fields: ['Nama','No. WA'] },
+  supplier:  { title: 'Tambah Supplier',  sheet: 'SUPPLIER',              fields: ['Nama','Kontak'] }
+};
+
+
 // 🌐 Fetch Data
 async function loadData() {
   $('#loader').style.display = 'block';
@@ -32,6 +39,8 @@ async function loadData() {
     $('#error-msg').style.display = 'block';
   }
 }
+
+
 
 // 🎨 Init UI
 function initUI() {
@@ -186,30 +195,56 @@ window.submitRestock = async () => {
 
 // 👥 Master CRUD
 function renderMaster() {
-  $('#list-pelanggan').innerHTML = renderList(DB.pelanggan, 'Pelanggan', ['Nama','No. WA']);
-  $('#list-supplier').innerHTML = renderList(DB.supplier, 'Supplier', ['Nama','Alamat','Kontak']);
+  $('#list-barang').innerHTML    = renderList(DB.master, MASTER_CONFIG.barang.fields, MASTER_CONFIG.barang.sheet);
+  $('#list-pelanggan').innerHTML = renderList(DB.pelanggan, MASTER_CONFIG.pelanggan.fields, MASTER_CONFIG.pelanggan.sheet);
+  $('#list-supplier').innerHTML  = renderList(DB.supplier, MASTER_CONFIG.supplier.fields, MASTER_CONFIG.supplier.sheet);
 }
 
-function renderList(arr, type, fields) {
-  return arr?.map((r, i) => `<div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-    ${fields.map(f=>`<span>${r[f]||'-'}</span>`).join(' - ')}
-    <button onclick="postData('${type.toUpperCase()}', 'delete', [], ${i+2})" class="btn btn-danger" style="padding:2px 8px; font-size:0.8rem;">Hapus</button>
-  </div>`).join('') || '<div class="empty">Belum ada data</div>';
+// 📋 Ganti fungsi renderList() yang lama
+function renderList(arr, fields, sheetName) {
+  if (!arr || arr.length === 0) return '<div class="empty">Belum ada data</div>';
+  return arr.map((r, i) => `
+    <div class="list-item">
+      <span>${fields.map(f => r[f] || '-').join(' | ')}</span>
+      <button class="btn btn-danger" style="padding:2px 8px; font-size:0.8rem;" 
+              onclick="postData('${sheetName}', 'delete', [], ${i + 2})">🗑️</button>
+    </div>
+  `).join('');
 }
 
 window.openCRUD = (type) => {
-  const fields = type === 'pelanggan' ? ['Nama','No. WA'] : ['Nama','Alamat','Kontak'];
-  $('#modal-title').textContent = `Tambah ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-  $('#crud-form').innerHTML = fields.map(f => `<div class="form-group"><label>${f}</label><input type="text" id="f-${f}" class="form-control" required></div>`).join('') + 
-    `<button type="button" class="btn btn-primary" onclick="submitCRUD('${type}', '${fields.join(',')}')">Simpan</button>`;
+  const cfg = MASTER_CONFIG[type];
+  if (!cfg) return;
+  
+  $('#modal-title').textContent = cfg.title;
+  $('#crud-form').innerHTML = cfg.fields.map(f => `
+    <div class="form-group">
+      <label>${f}</label>
+      <input type="text" id="f-${f.replace(/\s/g, '-')}" class="form-control" placeholder="${f}">
+    </div>
+  `).join('') + `<button type="button" class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="submitCRUD('${type}')">💾 Simpan</button>`;
+  
   $('#crud-modal').style.display = 'flex';
 };
 
-window.submitCRUD = async (type, fieldsStr) => {
-  const fields = fieldsStr.split(',');
-  const row = fields.map(f => $(`#f-${f}`).value);
-  await postData(type.toUpperCase(), 'append', row);
-  closeModal(); loadData();
+window.submitCRUD = async (type) => {
+  const cfg = MASTER_CONFIG[type];
+  const row = cfg.fields.map(f => {
+    const id = `f-${f.replace(/\s/g, '-')}`;
+    return $(`#${id}`)?.value || '';
+  });
+
+  const btn = $('#crud-form button');
+  btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+
+  try {
+    await postData(cfg.sheet, 'append', row);
+    closeModal(); loadData(); // Reload data dari sheet
+  } catch (e) {
+    alert('Gagal menyimpan: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Simpan';
+  }
 };
 
 window.closeModal = () => $('#crud-modal').style.display = 'none';
