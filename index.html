@@ -40,6 +40,11 @@
     .modal-content { background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
     .close-modal { float: right; cursor: pointer; font-size: 1.5rem; }
     @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
+  .card { background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+  .list-item { padding: 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .list-item span { font-size: 0.9rem; }
+    
   </style>
 </head>
 <body>
@@ -122,12 +127,26 @@
     </section>
 
     <!-- MASTER DATA -->
-    <section id="master" class="section">
-      <div class="grid-2">
-        <div><h3>👥 Pelanggan</h3><button class="btn btn-primary" style="margin:5px 0;" onclick="openCRUD('pelanggan')">+ Tambah</button><div id="list-pelanggan"></div></div>
-        <div><h3>🏭 Supplier</h3><button class="btn btn-primary" style="margin:5px 0;" onclick="openCRUD('supplier')">+ Tambah</button><div id="list-supplier"></div></div>
-      </div>
-    </section>
+<section id="master" class="section">
+  <h2>👥 Master Data</h2>
+  <div class="grid-3">
+    <div class="card">
+      <h3>📦 Barang</h3>
+      <button class="btn btn-primary" style="margin:8px 0; width:100%;" onclick="openCRUD('barang')">+ Tambah Barang</button>
+      <div id="list-barang" style="max-height:300px; overflow-y:auto;"></div>
+    </div>
+    <div class="card">
+      <h3>👥 Pelanggan</h3>
+      <button class="btn btn-primary" style="margin:8px 0; width:100%;" onclick="openCRUD('pelanggan')">+ Tambah Pelanggan</button>
+      <div id="list-pelanggan" style="max-height:300px; overflow-y:auto;"></div>
+    </div>
+    <div class="card">
+      <h3>🏭 Supplier</h3>
+      <button class="btn btn-primary" style="margin:8px 0; width:100%;" onclick="openCRUD('supplier')">+ Tambah Supplier</button>
+      <div id="list-supplier" style="max-height:300px; overflow-y:auto;"></div>
+    </div>
+  </div>
+</section>
 
     <!-- LAPORAN -->
     <section id="laporan" class="section">
