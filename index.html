@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NovaPOS - Toko Kelontong</title>
+    <title>NovaPOS - Sistem Toko Kelontong</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         :root {
             --neon-cyan: #00f2ff;
@@ -172,15 +176,10 @@
         }
 
         @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); position: fixed; z-index: 200; transition: transform 0.3s; width: 260px; background: linear-gradient(180deg, #0f111a 0%, #0b0c10 100%); height: 100vh; overflow-y: auto; }
+            .sidebar { transform: translateX(-100%); position: fixed; z-index: 200; transition: transform 0.3s; }
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0 !important; }
             .pos-layout { flex-direction: column; }
-            .menu-toggle { display: block !important; }
-        }
-
-        @media (min-width: 769px) {
-            .menu-toggle { display: none !important; }
         }
     </style>
 </head>
@@ -193,7 +192,7 @@
         <p id="loadingStatus" style="font-size:12px; color:#888">Inisialisasi...</p>
     </div>
 
-    <aside id="sidebar" class="sidebar" style="position:fixed; left:0; top:0; width:260px; height:100vh; background:linear-gradient(180deg, #0f111a 0%, #0b0c10 100%); border-right:1px solid var(--glass-border); z-index:100; transition:transform 0.3s; overflow-y:auto;">
+    <aside id="sidebar" style="position:fixed; left:0; top:0; width:260px; height:100vh; background:linear-gradient(180deg, #0f111a 0%, #0b0c10 100%); border-right:1px solid var(--glass-border); z-index:100; transition:transform 0.3s; overflow-y:auto;">
         <div style="padding:24px 20px; border-bottom:1px solid var(--glass-border);">
             <div style="display:flex; align-items:center; gap:12px;">
                 <div style="width:40px; height:40px; background:var(--neon-cyan); border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px rgba(0,242,255,0.5);">
@@ -208,31 +207,27 @@
         <nav style="padding:20px 16px;">
             <div style="margin-bottom:24px;">
                 <p style="font-size:10px; text-transform:uppercase; letter-spacing:1px; color:#666; margin-bottom:12px; padding-left:12px;">Menu Utama</p>
-                <button onclick="showView('pos')" id="nav-pos" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px; transition:all 0.2s;">
+                <button onclick="showView('pos')" id="nav-pos" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px; text-align:left;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                     <span>POS Transaksi</span>
                 </button>
-                <button onclick="showView('products')" id="nav-products" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px;">
+                <button onclick="showView('products')" id="nav-products" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px; text-align:left;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     <span>Master Barang</span>
                 </button>
-                <button onclick="showView('stock')" id="nav-stock" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px;">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    <span>Restock</span>
-                </button>
-                <button onclick="showView('transactions')" id="nav-transactions" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px;">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                    <span>Riwayat Transaksi</span>
-                </button>
-                <button onclick="showView('customers')" id="nav-customers" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px;">
+                <button onclick="showView('customers')" id="nav-customers" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px; text-align:left;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                     <span>Pelanggan</span>
                 </button>
-                <button onclick="showView('suppliers')" id="nav-suppliers" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px;">
+                <button onclick="showView('suppliers')" id="nav-suppliers" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px; text-align:left;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 18l4-4 4 4m0-8v4m4 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                     <span>Supplier</span>
                 </button>
-                <button onclick="showView('expenses')" id="nav-expenses" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px;">
+                <button onclick="showView('restock')" id="nav-restock" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px; text-align:left;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span>Restock</span>
+                </button>
+                <button onclick="showView('expenses')" id="nav-expenses" class="nav-item" style="width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px; background:none; color:#c5c6c7; cursor:pointer; margin-bottom:4px; text-align:left;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     <span>Pengeluaran</span>
                 </button>
@@ -254,7 +249,7 @@
     <main id="mainContent" style="margin-left:260px; min-height:100vh; transition:margin-left 0.3s;">
         <header style="background:var(--glass-dark); backdrop-filter:blur(20px); border-bottom:1px solid var(--glass-border); padding:16px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50;">
             <div style="display:flex; align-items:center; gap:16px;">
-                <button onclick="toggleSidebar()" id="menuToggle" class="menu-toggle" style="background:none; border:none; cursor:pointer;">
+                <button onclick="toggleSidebar()" id="menuToggle" style="display:none; background:none; border:none; cursor:pointer;">
                     <svg width="24" height="24" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 <h2 id="pageTitle" style="font-size:20px; font-weight:700; color:white;">POS Transaksi</h2>
@@ -267,10 +262,9 @@
         <div style="padding:24px 32px;">
             <div id="view-pos" class="view" style="display:block;"></div>
             <div id="view-products" class="view" style="display:none;"></div>
-            <div id="view-stock" class="view" style="display:none;"></div>
-            <div id="view-transactions" class="view" style="display:none;"></div>
             <div id="view-customers" class="view" style="display:none;"></div>
             <div id="view-suppliers" class="view" style="display:none;"></div>
+            <div id="view-restock" class="view" style="display:none;"></div>
             <div id="view-expenses" class="view" style="display:none;"></div>
         </div>
     </main>
@@ -280,11 +274,13 @@
 
 <script>
     // ============================================
-    // KONFIGURASI - URL WEB APP ANDA
+    // KONFIGURASI - WEB APP URL ANDA
     // ============================================
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkC8rnCnUjwgWPPj7WE3p6-3Fl36bElA_Tymjp2yTyvg09JRGtP4OyAk86k1w71-YnjA/exec';
+    
     // ============================================
-
+    // GLOBAL STATE
+    // ============================================
     let products = [];
     let customers = [];
     let suppliers = [];
@@ -293,9 +289,11 @@
     let expenses = [];
     let cart = [];
     let currentView = 'pos';
-    let isConnected = false;
     let selectedPayment = 'TUNAI';
 
+    // ============================================
+    // API CALL dengan Anti-CORS Strategy
+    // ============================================
     async function callAPI(action, data = null) {
         const payload = { action };
         if (data) payload.data = data;
@@ -311,64 +309,91 @@
             if (response.ok) {
                 const result = await response.json();
                 return result;
-            } else {
-                throw new Error('HTTP ' + response.status);
             }
         } catch (err) {
-            console.warn('POST failed:', err);
-            return { success: false, error: err.message };
+            console.warn('POST failed, trying JSONP...', err);
         }
+
+        return new Promise((resolve) => {
+            const callbackName = 'jsonp_callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            const script = document.createElement('script');
+            
+            window[callbackName] = function(result) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve(result);
+            };
+            
+            const params = new URLSearchParams();
+            params.set('action', action);
+            if (data) params.set('data', JSON.stringify(data));
+            params.set('callback', callbackName);
+            
+            script.src = `${SCRIPT_URL}?${params.toString()}`;
+            script.onerror = () => {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve({ success: false, error: 'Connection failed' });
+            };
+            document.body.appendChild(script);
+        });
     }
 
+    // ============================================
+    // LOAD DATA from Google Sheets
+    // ============================================
     async function loadAllData() {
-        updateLoadingStatus('Mengambil data produk...');
+        updateLoadingStatus('Mengambil data MASTER BARANG...');
         const productsRes = await callAPI('getProducts');
         if (productsRes.success && productsRes.data) {
             products = productsRes.data;
             updateLoadingStatus(`✓ ${products.length} produk dimuat`);
         }
 
-        updateLoadingStatus('Mengambil data pelanggan...');
+        updateLoadingStatus('Mengambil data PELANGGAN...');
         const customersRes = await callAPI('getCustomers');
         if (customersRes.success && customersRes.data) {
             customers = customersRes.data;
             updateLoadingStatus(`✓ ${customers.length} pelanggan dimuat`);
         }
 
-        updateLoadingStatus('Mengambil data supplier...');
+        updateLoadingStatus('Mengambil data SUPPLIER...');
         const suppliersRes = await callAPI('getSuppliers');
         if (suppliersRes.success && suppliersRes.data) {
             suppliers = suppliersRes.data;
             updateLoadingStatus(`✓ ${suppliers.length} supplier dimuat`);
         }
 
-        updateLoadingStatus('Mengambil data transaksi...');
+        updateLoadingStatus('Mengambil data TRANSAKSI...');
         const transactionsRes = await callAPI('getTransactions');
         if (transactionsRes.success && transactionsRes.data) {
             transactions = transactionsRes.data;
             updateLoadingStatus(`✓ ${transactions.length} transaksi dimuat`);
         }
 
-        updateLoadingStatus('Mengambil data restock...');
+        updateLoadingStatus('Mengambil data PEMBELIAN/RESTOCK...');
         const restocksRes = await callAPI('getRestocks');
         if (restocksRes.success && restocksRes.data) {
             restocks = restocksRes.data;
             updateLoadingStatus(`✓ ${restocks.length} restock dimuat`);
         }
 
-        updateLoadingStatus('Mengambil data pengeluaran...');
+        updateLoadingStatus('Mengambil data PENGELUARAN...');
         const expensesRes = await callAPI('getExpenses');
         if (expensesRes.success && expensesRes.data) {
             expenses = expensesRes.data;
             updateLoadingStatus(`✓ ${expenses.length} pengeluaran dimuat`);
         }
 
-        isConnected = true;
         document.getElementById('dbStatusDot').style.background = '#10b981';
         document.getElementById('dbStatusText').innerHTML = 'Terhubung ke Google Sheets';
     }
 
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
     function formatCurrency(num) {
+        if (num === undefined || num === null) num = 0;
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
     }
 
@@ -376,6 +401,12 @@
         if (!dateStr) return '-';
         const d = new Date(dateStr);
         return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatDateOnly(dateStr) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
     }
 
     function showToast(message, type = 'success') {
@@ -410,10 +441,9 @@
         const titles = { 
             pos: 'POS Transaksi', 
             products: 'Master Barang', 
-            stock: 'Restock Barang',
-            transactions: 'Riwayat Transaksi',
             customers: 'Data Pelanggan', 
-            suppliers: 'Data Supplier',
+            suppliers: 'Data Supplier', 
+            restock: 'Restock Barang',
             expenses: 'Pengeluaran Operasional'
         };
         document.getElementById('pageTitle').textContent = titles[view];
@@ -430,10 +460,9 @@
         
         if (view === 'pos') renderPOS();
         else if (view === 'products') renderProducts();
-        else if (view === 'stock') renderStock();
-        else if (view === 'transactions') renderTransactions();
         else if (view === 'customers') renderCustomers();
         else if (view === 'suppliers') renderSuppliers();
+        else if (view === 'restock') renderRestock();
         else if (view === 'expenses') renderExpenses();
     }
 
@@ -449,23 +478,24 @@
         document.getElementById('sidebarOverlay').style.display = 'none';
     }
 
-    // ========== POS ==========
+    // ============================================
+    // POS COMPONENT
+    // ============================================
     function renderPOS() {
         const container = document.getElementById('view-pos');
         container.innerHTML = `
-            <div style="display:flex; gap:24px; flex-wrap:wrap;">
-                <div style="flex:1.2; min-width:300px;">
-                    <div class="futuristic-card">
-                        <h3 style="color:white; margin-bottom:16px;">🛒 Keranjang Belanja</h3>
-                        <div id="cartItems" style="max-height:400px; overflow-y:auto; margin-bottom:16px;"></div>
-                        <div style="border-top:1px solid var(--glass-border); padding-top:16px;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                                <span>Subtotal</span>
-                                <span id="cartSubtotal">Rp 0</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:16px; font-size:20px; font-weight:bold;">
-                                <span>TOTAL</span>
-                                <span id="cartTotal" style="color:var(--neon-cyan);">Rp 0</span>
+            <div style="display:flex; gap:24px; min-height:calc(100vh - 120px); flex-wrap:wrap;">
+                <div style="flex:1; min-width:300px; display:flex; flex-direction:column; gap:20px;">
+                    <div class="futuristic-card" style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <h3 style="color:white; display:flex; align-items:center; gap:8px;">🛒 Keranjang Belanja</h3>
+                            <span id="cartCount" style="background:var(--neon-cyan); color:black; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;">0 item</span>
+                        </div>
+                        <div id="cartItems" style="flex:1; overflow-y:auto; max-height:400px;"></div>
+                        <div id="cartSummary" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--glass-border);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                <span>Total</span>
+                                <span id="cartTotal" style="font-size:24px; font-weight:bold; color:var(--neon-cyan); font-family:monospace;">Rp 0</span>
                             </div>
                             <div style="display:flex; gap:12px;">
                                 <button onclick="clearCart()" class="btn-outline" style="flex:1;">Kosongkan</button>
@@ -473,8 +503,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="futuristic-card" style="margin-top:16px;">
-                        <h3 style="color:white; margin-bottom:16px;">💰 Metode Pembayaran</h3>
+                    <div class="futuristic-card">
+                        <h3 style="color:white; margin-bottom:16px;">Metode Pembayaran</h3>
                         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
                             <button onclick="selectPayment('TUNAI')" id="pay-tunai" class="payment-method" style="padding:12px; background:rgba(0,242,255,0.1); border:1px solid var(--neon-cyan); border-radius:10px; color:var(--neon-cyan); cursor:pointer;">💵 Tunai</button>
                             <button onclick="selectPayment('QRIS')" id="pay-qris" class="payment-method" style="padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:10px; color:white; cursor:pointer;">📱 QRIS</button>
@@ -482,11 +512,11 @@
                         </div>
                     </div>
                 </div>
-                <div style="flex:2; min-width:300px;">
-                    <div class="glass" style="padding:16px; margin-bottom:16px;">
-                        <input type="text" id="productSearch" placeholder="Cari produk (Nama / Kode)..." oninput="filterProducts()" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:10px; padding:12px 16px; color:white; outline:none;">
+                <div style="flex:2; min-width:400px; display:flex; flex-direction:column; gap:16px;">
+                    <div class="glass" style="padding:16px;">
+                        <input type="text" id="productSearch" placeholder="Cari produk (Kode / Nama)..." oninput="filterProducts()" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:10px; padding:12px 16px; color:white; outline:none;">
                     </div>
-                    <div id="productGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px; max-height:calc(100vh - 280px); overflow-y:auto;"></div>
+                    <div id="productGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px; overflow-y:auto; max-height:calc(100vh - 280px);"></div>
                 </div>
             </div>
         `;
@@ -568,14 +598,14 @@
 
     function renderCart() {
         const container = document.getElementById('cartItems');
-        const subtotalEl = document.getElementById('cartSubtotal');
+        const countBadge = document.getElementById('cartCount');
         const totalEl = document.getElementById('cartTotal');
         
-        if (!container) return;
+        const totalItems = cart.reduce((s, c) => s + c.qty, 0);
+        countBadge.textContent = `${totalItems} item`;
         
         if (cart.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:40px; color:#666;">🛒 Keranjang kosong</div>';
-            subtotalEl.textContent = formatCurrency(0);
             totalEl.textContent = formatCurrency(0);
             return;
         }
@@ -599,7 +629,6 @@
         `).join('');
         
         const total = cart.reduce((s, c) => s + c.subtotal, 0);
-        subtotalEl.textContent = formatCurrency(total);
         totalEl.textContent = formatCurrency(total);
     }
 
@@ -611,15 +640,13 @@
         );
         const grid = document.getElementById('productGrid');
         
-        if (!grid) return;
-        
         if (filtered.length === 0) {
             grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#666;">📦 Produk tidak ditemukan</div>';
             return;
         }
         
         grid.innerHTML = filtered.map(p => `
-            <div class="futuristic-card" style="cursor:pointer; padding:16px;" onclick='addToCart(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+            <div class="futuristic-card" style="cursor:pointer; padding:16px;" onclick="addToCart(${JSON.stringify(p).replace(/"/g, '&quot;')})">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
                     <span style="font-size:10px; color:var(--neon-cyan); background:rgba(0,242,255,0.1); padding:2px 8px; border-radius:20px;">${p.kode_barang || '-'}</span>
                     ${p.stok_saat_ini <= 5 ? '<span style="font-size:10px; color:#ef4444;">⚠️ Stok Menipis</span>' : ''}
@@ -651,15 +678,14 @@
         const now = new Date();
         const tanggal = now.toISOString().split('T')[0];
         const jam = now.toTimeString().split(' ')[0].substring(0,5);
-        const invoice = `INV-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-        
+        const invoiceNo = `INV-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
         const total = cart.reduce((s, c) => s + c.subtotal, 0);
         
         for (const item of cart) {
-            const transaction = {
+            const transactionData = {
                 tanggal: tanggal,
                 jam: jam,
-                no_invoice: invoice,
+                no_invoice: invoiceNo,
                 kode_barang: item.kode_barang,
                 nama_barang: item.nama_barang,
                 harga_jual: item.harga_jual,
@@ -669,17 +695,17 @@
                 kasir: 'Admin'
             };
             
-            const result = await callAPI('addTransaction', transaction);
+            const result = await callAPI('addTransaction', transactionData);
             if (!result.success) {
-                showToast('Gagal menyimpan transaksi', 'error');
+                showToast(`Gagal menyimpan transaksi untuk ${item.nama_barang}`, 'error');
                 return;
             }
             
-            // Update stock
+            // Update stok
             const product = products.find(p => p.kode_barang === item.kode_barang);
             if (product) {
                 const newStock = product.stok_saat_ini - item.qty;
-                await callAPI('updateStock', { kode_barang: item.kode_barang, stok: newStock });
+                await callAPI('updateStock', { kode_barang: item.kode_barang, stok_baru: newStock });
             }
         }
         
@@ -689,10 +715,13 @@
         renderCart();
         renderProductGrid();
         updateCheckoutButton();
-        renderTransactions();
+        
+        alert(`📋 STRUK PEMBAYARAN\n\nNo Invoice: ${invoiceNo}\nTanggal: ${tanggal} ${jam}\nTotal: ${formatCurrency(total)}\nMetode: ${selectedPayment}\n\nTerima kasih!`);
     }
 
-    // ========== PRODUCTS ==========
+    // ============================================
+    // PRODUCTS COMPONENT (MASTER BARANG)
+    // ============================================
     function renderProducts() {
         const container = document.getElementById('view-products');
         container.innerHTML = `
@@ -701,14 +730,22 @@
                     <h3 style="color:white;">📦 Master Barang</h3>
                     <button class="btn-primary" onclick="openProductModal()">+ Tambah Barang</button>
                 </div>
+                <div style="margin-bottom:16px;">
+                    <input type="text" id="productSearchMgmt" placeholder="Cari produk..." oninput="renderProductsList()" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:10px; padding:10px 16px; color:white;">
+                </div>
                 <div style="overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse;">
                         <thead>
                             <tr style="border-bottom:1px solid var(--glass-border);">
-                                <th style="padding:12px; text-align:left;">Kode</th><th style="padding:12px; text-align:left;">Nama</th>
-                                <th style="padding:12px; text-align:left;">Kategori</th><th style="padding:12px; text-align:left;">Satuan</th>
-                                <th style="padding:12px; text-align:left;">Harga Beli</th><th style="padding:12px; text-align:left;">Harga Jual</th>
-                                <th style="padding:12px; text-align:left;">Stok</th><th style="padding:12px; text-align:center;">Aksi</th>
+                                <th style="padding:12px; text-align:left;">Kode</th>
+                                <th style="padding:12px; text-align:left;">Nama Barang</th>
+                                <th style="padding:12px; text-align:left;">Kategori</th>
+                                <th style="padding:12px; text-align:left;">Satuan</th>
+                                <th style="padding:12px; text-align:left;">Harga Beli</th>
+                                <th style="padding:12px; text-align:left;">Harga Jual</th>
+                                <th style="padding:12px; text-align:left;">Stok</th>
+                                <th style="padding:12px; text-align:left;">Status</th>
+                                <th style="padding:12px; text-align:center;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="productsList"></tbody>
@@ -720,26 +757,31 @@
     }
 
     function renderProductsList() {
+        const search = (document.getElementById('productSearchMgmt')?.value || '').toLowerCase();
+        const filtered = products.filter(p => 
+            p.nama_barang.toLowerCase().includes(search) || 
+            (p.kode_barang && p.kode_barang.toLowerCase().includes(search))
+        );
         const tbody = document.getElementById('productsList');
-        if (!tbody) return;
         
-        if (products.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="padding:40px; text-align:center;">Tidak ada data</td></tr>';
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="padding:40px; text-align:center; color:#666;">Tidak ada produk</td></tr>';
             return;
         }
         
-        tbody.innerHTML = products.map(p => `
+        tbody.innerHTML = filtered.map(p => `
             <tr style="border-bottom:1px solid var(--glass-border);">
-                <td style="padding:12px;">${p.kode_barang}</td>
-                <td style="padding:12px;">${p.nama_barang}</td>
+                <td style="padding:12px; font-family:monospace;">${p.kode_barang || '-'}</td>
+                <td style="padding:12px; font-weight:500;">${p.nama_barang}</td>
                 <td style="padding:12px;">${p.kategori || '-'}</td>
                 <td style="padding:12px;">${p.satuan || '-'}</td>
-                <td style="padding:12px;">${formatCurrency(p.harga_beli_modal)}</td>
+                <td style="padding:12px;">${formatCurrency(p.harga_beli)}</td>
                 <td style="padding:12px; color:var(--neon-cyan);">${formatCurrency(p.harga_jual)}</td>
                 <td style="padding:12px; ${p.stok_saat_ini <= 5 ? 'color:#ef4444;' : ''}">${p.stok_saat_ini}</td>
+                <td style="padding:12px;"><span class="status-badge" style="padding:4px 8px; border-radius:20px; font-size:11px; ${p.stok_saat_ini <= 5 ? 'background:#ef444420; color:#ef4444;' : 'background:#10b98120; color:#10b981;'}">${p.stok_saat_ini <= 5 ? '⚠️ RESTOCK' : '✅ Aman'}</span></td>
                 <td style="padding:12px; text-align:center;">
-                    <button onclick="editProduct('${p.kode_barang}')" style="background:rgba(0,242,255,0.1); border:none; padding:6px 12px; border-radius:6px; color:var(--neon-cyan); cursor:pointer;">✏️</button>
-                    <button onclick="deleteProduct('${p.kode_barang}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer; margin-left:8px;">🗑️</button>
+                    <button onclick="editProduct('${p.kode_barang}')" style="background:rgba(0,242,255,0.1); border:none; padding:6px 12px; border-radius:6px; color:var(--neon-cyan); cursor:pointer; margin-right:4px;">✏️</button>
+                    <button onclick="deleteProduct('${p.kode_barang}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer;">🗑️</button>
                 </td>
             </tr>
         `).join('');
@@ -748,56 +790,72 @@
     function openProductModal(editKode = null) {
         const product = editKode ? products.find(p => p.kode_barang === editKode) : null;
         const modalHtml = `
-            <div id="productModal" class="modal-overlay active">
+            <div id="productModalOverlay" class="modal-overlay active">
                 <div class="modal-content glass" style="max-width:500px; padding:24px;">
-                    <h3 style="color:white; margin-bottom:20px;">${product ? 'Edit Produk' : 'Tambah Produk'}</h3>
+                    <h3 style="color:white; margin-bottom:20px;">${product ? 'Edit Produk' : 'Tambah Produk Baru'}</h3>
                     <form id="productForm" onsubmit="saveProduct(event)">
                         <input type="hidden" id="editKode" value="${product ? product.kode_barang : ''}">
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Kode Barang</label>
-                            <input type="text" id="kodeBarang" required value="${product ? product.kode_barang : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            <label style="font-size:12px; color:#888;">Kode Barang *</label>
+                            <input type="text" id="productKode" required value="${product ? product.kode_barang : ''}" ${product ? 'readonly' : ''} style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Nama Barang</label>
-                            <input type="text" id="namaBarang" required value="${product ? product.nama_barang : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            <label style="font-size:12px; color:#888;">Nama Barang *</label>
+                            <input type="text" id="productNama" required value="${product ? product.nama_barang : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                            <div><label style="font-size:12px;">Kategori</label><input type="text" id="kategori" value="${product ? product.kategori : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;"></div>
-                            <div><label style="font-size:12px;">Satuan</label><input type="text" id="satuan" value="${product ? product.satuan : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;"></div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                            <div>
+                                <label style="font-size:12px; color:#888;">Kategori</label>
+                                <input type="text" id="productKategori" value="${product ? product.kategori || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#888;">Satuan</label>
+                                <input type="text" id="productSatuan" value="${product ? product.satuan || '' : ''}" placeholder="Pcs/Kg/Botol" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            </div>
                         </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
-                            <div><label style="font-size:12px;">Harga Beli</label><input type="number" id="hargaBeli" value="${product ? product.harga_beli_modal : 0}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;"></div>
-                            <div><label style="font-size:12px;">Harga Jual</label><input type="number" id="hargaJual" required value="${product ? product.harga_jual : 0}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;"></div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                            <div>
+                                <label style="font-size:12px; color:#888;">Harga Beli Modal</label>
+                                <input type="number" id="productHargaBeli" value="${product ? product.harga_beli : 0}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:#888;">Harga Jual *</label>
+                                <input type="number" id="productHargaJual" required value="${product ? product.harga_jual : 0}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            </div>
                         </div>
-                        <div style="margin-top:16px;">
-                            <label style="font-size:12px;">Stok Awal</label>
-                            <input type="number" id="stokAwal" value="${product ? product.stok_awal : 0}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        <div style="margin-bottom:24px;">
+                            <label style="font-size:12px; color:#888;">Stok Awal</label>
+                            <input type="number" id="productStok" value="${product ? product.stok_awal : 0}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
-                        <div style="display:flex; gap:12px; margin-top:24px;">
-                            <button type="button" onclick="closeModal('productModal')" class="btn-outline" style="flex:1;">Batal</button>
+                        <div style="display:flex; gap:12px;">
+                            <button type="button" onclick="closeProductModal()" class="btn-outline" style="flex:1;">Batal</button>
                             <button type="submit" class="btn-primary" style="flex:2;">Simpan</button>
                         </div>
                     </form>
                 </div>
             </div>
         `;
-        const existing = document.getElementById('productModal');
+        const existing = document.getElementById('productModalOverlay');
         if (existing) existing.remove();
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function closeProductModal() {
+        const modal = document.getElementById('productModalOverlay');
+        if (modal) modal.remove();
     }
 
     async function saveProduct(e) {
         e.preventDefault();
         const editKode = document.getElementById('editKode').value;
         const productData = {
-            kode_barang: document.getElementById('kodeBarang').value,
-            nama_barang: document.getElementById('namaBarang').value,
-            kategori: document.getElementById('kategori').value,
-            satuan: document.getElementById('satuan').value,
-            harga_beli_modal: parseInt(document.getElementById('hargaBeli').value) || 0,
-            harga_jual: parseInt(document.getElementById('hargaJual').value) || 0,
-            stok_awal: parseInt(document.getElementById('stokAwal').value) || 0,
-            stok_saat_ini: parseInt(document.getElementById('stokAwal').value) || 0
+            kode_barang: document.getElementById('productKode').value,
+            nama_barang: document.getElementById('productNama').value,
+            kategori: document.getElementById('productKategori').value,
+            satuan: document.getElementById('productSatuan').value,
+            harga_beli: parseInt(document.getElementById('productHargaBeli').value) || 0,
+            harga_jual: parseInt(document.getElementById('productHargaJual').value) || 0,
+            stok_awal: parseInt(document.getElementById('productStok').value) || 0
         };
         
         let result;
@@ -812,9 +870,9 @@
             await loadAllData();
             renderProductsList();
             renderProductGrid();
-            closeModal('productModal');
+            closeProductModal();
         } else {
-            showToast('Gagal menyimpan', 'error');
+            showToast('Gagal menyimpan: ' + (result.error || 'Unknown error'), 'error');
         }
     }
 
@@ -836,27 +894,294 @@
         openProductModal(kode);
     }
 
-    function closeModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) modal.remove();
-    }
-
-    // ========== STOCK / RESTOCK ==========
-    function renderStock() {
-        const container = document.getElementById('view-stock');
+    // ============================================
+    // CUSTOMERS COMPONENT (PELANGGAN)
+    // ============================================
+    function renderCustomers() {
+        const container = document.getElementById('view-customers');
         container.innerHTML = `
             <div class="futuristic-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h3 style="color:white;">📦 Riwayat Restock / Pembelian</h3>
+                    <h3 style="color:white;">👥 Data Pelanggan</h3>
+                    <button class="btn-primary" onclick="openCustomerModal()">+ Tambah Pelanggan</button>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <input type="text" id="customerSearch" placeholder="Cari pelanggan..." oninput="renderCustomersList()" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:10px; padding:10px 16px; color:white;">
+                </div>
+                <div id="customersList"></div>
+            </div>
+        `;
+        renderCustomersList();
+    }
+
+    function renderCustomersList() {
+        const search = (document.getElementById('customerSearch')?.value || '').toLowerCase();
+        const filtered = customers.filter(c => c.nama.toLowerCase().includes(search) || (c.no_wa && c.no_wa.includes(search)));
+        const container = document.getElementById('customersList');
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">Tidak ada pelanggan</p>';
+            return;
+        }
+        
+        container.innerHTML = filtered.map(c => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--glass-border);">
+                <div>
+                    <p style="color:white; font-weight:500;">${c.nama}</p>
+                    <p style="font-size:12px; color:#888;">📞 ${c.no_wa || '-'} | 📍 ${c.alamat || '-'}</p>
+                    <p style="font-size:11px; color:#666;">${c.catatan || ''}</p>
+                </div>
+                <div>
+                    <button onclick="editCustomer('${c.id}')" style="background:rgba(0,242,255,0.1); border:none; padding:6px 12px; border-radius:6px; color:var(--neon-cyan); cursor:pointer; margin-right:4px;">✏️</button>
+                    <button onclick="deleteCustomer('${c.id}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer;">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openCustomerModal(editId = null) {
+        const customer = editId ? customers.find(c => c.id == editId) : null;
+        const modalHtml = `
+            <div id="customerModalOverlay" class="modal-overlay active">
+                <div class="modal-content glass" style="max-width:500px; padding:24px;">
+                    <h3 style="color:white; margin-bottom:20px;">${customer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
+                    <form id="customerForm" onsubmit="saveCustomer(event)">
+                        <input type="hidden" id="editCustomerId" value="${customer ? customer.id : ''}">
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; color:#888;">Nama Lengkap *</label>
+                            <input type="text" id="customerNama" required value="${customer ? customer.nama : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; color:#888;">No. WhatsApp</label>
+                            <input type="text" id="customerNoWa" value="${customer ? customer.no_wa || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; color:#888;">Alamat</label>
+                            <textarea id="customerAlamat" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">${customer ? customer.alamat || '' : ''}</textarea>
+                        </div>
+                        <div style="margin-bottom:24px;">
+                            <label style="font-size:12px; color:#888;">Catatan</label>
+                            <input type="text" id="customerCatatan" value="${customer ? customer.catatan || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="display:flex; gap:12px;">
+                            <button type="button" onclick="closeCustomerModal()" class="btn-outline" style="flex:1;">Batal</button>
+                            <button type="submit" class="btn-primary" style="flex:2;">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        const existing = document.getElementById('customerModalOverlay');
+        if (existing) existing.remove();
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function closeCustomerModal() {
+        const modal = document.getElementById('customerModalOverlay');
+        if (modal) modal.remove();
+    }
+
+    async function saveCustomer(e) {
+        e.preventDefault();
+        const editId = document.getElementById('editCustomerId').value;
+        const customerData = {
+            nama: document.getElementById('customerNama').value,
+            no_wa: document.getElementById('customerNoWa').value,
+            alamat: document.getElementById('customerAlamat').value,
+            catatan: document.getElementById('customerCatatan').value
+        };
+        
+        let result;
+        if (editId) {
+            customerData.id = editId;
+            result = await callAPI('updateCustomer', customerData);
+        } else {
+            result = await callAPI('addCustomer', customerData);
+        }
+        
+        if (result.success) {
+            showToast(editId ? 'Pelanggan diperbarui' : 'Pelanggan ditambahkan');
+            await loadAllData();
+            renderCustomersList();
+            closeCustomerModal();
+        } else {
+            showToast('Gagal menyimpan', 'error');
+        }
+    }
+
+    async function deleteCustomer(id) {
+        if (confirm('Yakin ingin menghapus pelanggan ini?')) {
+            const result = await callAPI('deleteCustomer', { id: id });
+            if (result.success) {
+                showToast('Pelanggan dihapus');
+                await loadAllData();
+                renderCustomersList();
+            } else {
+                showToast('Gagal menghapus', 'error');
+            }
+        }
+    }
+
+    function editCustomer(id) {
+        openCustomerModal(id);
+    }
+
+    // ============================================
+    // SUPPLIERS COMPONENT
+    // ============================================
+    function renderSuppliers() {
+        const container = document.getElementById('view-suppliers');
+        container.innerHTML = `
+            <div class="futuristic-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h3 style="color:white;">🚚 Data Supplier</h3>
+                    <button class="btn-primary" onclick="openSupplierModal()">+ Tambah Supplier</button>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <input type="text" id="supplierSearch" placeholder="Cari supplier..." oninput="renderSuppliersList()" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:10px; padding:10px 16px; color:white;">
+                </div>
+                <div id="suppliersList"></div>
+            </div>
+        `;
+        renderSuppliersList();
+    }
+
+    function renderSuppliersList() {
+        const search = (document.getElementById('supplierSearch')?.value || '').toLowerCase();
+        const filtered = suppliers.filter(s => s.nama.toLowerCase().includes(search) || (s.kontak && s.kontak.includes(search)));
+        const container = document.getElementById('suppliersList');
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:40px; color:#666;">Tidak ada supplier</p>';
+            return;
+        }
+        
+        container.innerHTML = filtered.map(s => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--glass-border);">
+                <div>
+                    <p style="color:white; font-weight:500;">${s.nama}</p>
+                    <p style="font-size:12px; color:#888;">📞 ${s.kontak || '-'} | 📍 ${s.alamat || '-'}</p>
+                    <p style="font-size:11px; color:#666;">${s.catatan || ''}</p>
+                </div>
+                <div>
+                    <button onclick="editSupplier('${s.id}')" style="background:rgba(0,242,255,0.1); border:none; padding:6px 12px; border-radius:6px; color:var(--neon-cyan); cursor:pointer; margin-right:4px;">✏️</button>
+                    <button onclick="deleteSupplier('${s.id}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer;">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openSupplierModal(editId = null) {
+        const supplier = editId ? suppliers.find(s => s.id == editId) : null;
+        const modalHtml = `
+            <div id="supplierModalOverlay" class="modal-overlay active">
+                <div class="modal-content glass" style="max-width:500px; padding:24px;">
+                    <h3 style="color:white; margin-bottom:20px;">${supplier ? 'Edit Supplier' : 'Tambah Supplier'}</h3>
+                    <form id="supplierForm" onsubmit="saveSupplier(event)">
+                        <input type="hidden" id="editSupplierId" value="${supplier ? supplier.id : ''}">
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; color:#888;">Nama Supplier *</label>
+                            <input type="text" id="supplierNama" required value="${supplier ? supplier.nama : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; color:#888;">Kontak</label>
+                            <input type="text" id="supplierKontak" value="${supplier ? supplier.kontak || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; color:#888;">Alamat</label>
+                            <textarea id="supplierAlamat" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">${supplier ? supplier.alamat || '' : ''}</textarea>
+                        </div>
+                        <div style="margin-bottom:24px;">
+                            <label style="font-size:12px; color:#888;">Catatan</label>
+                            <input type="text" id="supplierCatatan" value="${supplier ? supplier.catatan || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="display:flex; gap:12px;">
+                            <button type="button" onclick="closeSupplierModal()" class="btn-outline" style="flex:1;">Batal</button>
+                            <button type="submit" class="btn-primary" style="flex:2;">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        const existing = document.getElementById('supplierModalOverlay');
+        if (existing) existing.remove();
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function closeSupplierModal() {
+        const modal = document.getElementById('supplierModalOverlay');
+        if (modal) modal.remove();
+    }
+
+    async function saveSupplier(e) {
+        e.preventDefault();
+        const editId = document.getElementById('editSupplierId').value;
+        const supplierData = {
+            nama: document.getElementById('supplierNama').value,
+            kontak: document.getElementById('supplierKontak').value,
+            alamat: document.getElementById('supplierAlamat').value,
+            catatan: document.getElementById('supplierCatatan').value
+        };
+        
+        let result;
+        if (editId) {
+            supplierData.id = editId;
+            result = await callAPI('updateSupplier', supplierData);
+        } else {
+            result = await callAPI('addSupplier', supplierData);
+        }
+        
+        if (result.success) {
+            showToast(editId ? 'Supplier diperbarui' : 'Supplier ditambahkan');
+            await loadAllData();
+            renderSuppliersList();
+            closeSupplierModal();
+        } else {
+            showToast('Gagal menyimpan', 'error');
+        }
+    }
+
+    async function deleteSupplier(id) {
+        if (confirm('Yakin ingin menghapus supplier ini?')) {
+            const result = await callAPI('deleteSupplier', { id: id });
+            if (result.success) {
+                showToast('Supplier dihapus');
+                await loadAllData();
+                renderSuppliersList();
+            } else {
+                showToast('Gagal menghapus', 'error');
+            }
+        }
+    }
+
+    function editSupplier(id) {
+        openSupplierModal(id);
+    }
+
+    // ============================================
+    // RESTOCK COMPONENT (PEMBELIAN / RESTOCK)
+    // ============================================
+    function renderRestock() {
+        const container = document.getElementById('view-restock');
+        container.innerHTML = `
+            <div class="futuristic-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h3 style="color:white;">📦 Riwayat Pembelian / Restock</h3>
                     <button class="btn-primary" onclick="openRestockModal()">+ Restock Barang</button>
                 </div>
                 <div style="overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse;">
-                        <thead><tr style="border-bottom:1px solid var(--glass-border);">
-                            <th style="padding:12px;">Tanggal</th><th style="padding:12px;">Kode</th><th style="padding:12px;">Nama Barang</th>
-                            <th style="padding:12px;">Jumlah Masuk</th><th style="padding:12px;">Harga Beli</th>
-                            <th style="padding:12px;">Total Modal</th><th style="padding:12px;">Supplier</th>
-                        </tr></thead>
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--glass-border);">
+                                <th style="padding:12px; text-align:left;">Tanggal</th>
+                                <th style="padding:12px; text-align:left;">Kode Barang</th>
+                                <th style="padding:12px; text-align:left;">Nama Barang</th>
+                                <th style="padding:12px; text-align:left;">Jumlah</th>
+                                <th style="padding:12px; text-align:left;">Harga Beli</th>
+                                <th style="padding:12px; text-align:left;">Total Modal</th>
+                                <th style="padding:12px; text-align:left;">Supplier</th>
+                            </tr>
+                        </thead>
                         <tbody id="restocksList"></tbody>
                     </table>
                 </div>
@@ -870,15 +1195,15 @@
         if (!tbody) return;
         
         if (restocks.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="padding:40px; text-align:center;">Belum ada data restock</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="padding:40px; text-align:center; color:#666;">Belum ada riwayat restock</td></tr>';
             return;
         }
         
         tbody.innerHTML = restocks.map(r => `
             <tr style="border-bottom:1px solid var(--glass-border);">
-                <td style="padding:12px;">${formatDate(r.tanggal)}</td>
-                <td style="padding:12px;">${r.kode_barang}</td>
-                <td style="padding:12px;">${r.nama_barang}</td>
+                <td style="padding:12px;">${formatDateOnly(r.tanggal)}</td>
+                <td style="padding:12px; font-family:monospace;">${r.kode_barang || '-'}</td>
+                <td style="padding:12px;">${r.nama_barang || '-'}</td>
                 <td style="padding:12px;">${r.jumlah_masuk}</td>
                 <td style="padding:12px;">${formatCurrency(r.harga_beli_satuan)}</td>
                 <td style="padding:12px; color:var(--neon-cyan);">${formatCurrency(r.total_modal)}</td>
@@ -889,379 +1214,104 @@
 
     function openRestockModal() {
         const modalHtml = `
-            <div id="restockModal" class="modal-overlay active">
+            <div id="restockModalOverlay" class="modal-overlay active">
                 <div class="modal-content glass" style="max-width:500px; padding:24px;">
-                    <h3 style="color:white; margin-bottom:20px;">Restock Barang</h3>
+                    <h3 style="color:white; margin-bottom:20px;">Restock / Pembelian Barang</h3>
                     <form id="restockForm" onsubmit="saveRestock(event)">
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Tanggal</label>
-                            <input type="date" id="restockTanggal" required value="${new Date().toISOString().split('T')[0]}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Pilih Barang</label>
-                            <select id="restockKodeBarang" required style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                                <option value="">-- Pilih --</option>
-                                ${products.map(p => `<option value="${p.kode_barang}">${p.kode_barang} - ${p.nama_barang} (Stok: ${p.stok_saat_ini})</option>`).join('')}
+                            <label style="font-size:12px; color:#888;">Pilih Produk *</label>
+                            <select id="restockProductKode" required style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                                <option value="">-- Pilih Produk --</option>
+                                ${products.map(p => `<option value="${p.kode_barang}" data-nama="${p.nama_barang}" data-harga="${p.harga_beli}">${p.kode_barang} - ${p.nama_barang} (Stok: ${p.stok_saat_ini})</option>`).join('')}
                             </select>
                         </div>
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Jumlah Masuk</label>
-                            <input type="number" id="restockJumlah" required min="1" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Harga Beli Satuan</label>
-                            <input type="number" id="restockHarga" required min="0" step="1000" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Nama Supplier</label>
-                            <select id="restockSupplier" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            <label style="font-size:12px; color:#888;">Pilih Supplier</label>
+                            <select id="restockSupplierNama" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                                 <option value="">-- Pilih Supplier --</option>
                                 ${suppliers.map(s => `<option value="${s.nama}">${s.nama}</option>`).join('')}
                             </select>
                         </div>
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Keterangan</label>
+                            <label style="font-size:12px; color:#888;">Jumlah Masuk *</label>
+                            <input type="number" id="restockJumlah" required min="1" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:12px; color:#888;">Harga Beli Satuan *</label>
+                            <input type="number" id="restockHarga" required min="0" step="100" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                        </div>
+                        <div style="margin-bottom:24px;">
+                            <label style="font-size:12px; color:#888;">Keterangan</label>
                             <input type="text" id="restockKeterangan" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
-                        <div style="display:flex; gap:12px; margin-top:24px;">
-                            <button type="button" onclick="closeModal('restockModal')" class="btn-outline" style="flex:1;">Batal</button>
+                        <div style="display:flex; gap:12px;">
+                            <button type="button" onclick="closeRestockModal()" class="btn-outline" style="flex:1;">Batal</button>
                             <button type="submit" class="btn-primary" style="flex:2;">Proses Restock</button>
                         </div>
                     </form>
                 </div>
             </div>
         `;
-        const existing = document.getElementById('restockModal');
+        const existing = document.getElementById('restockModalOverlay');
         if (existing) existing.remove();
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Auto-fill harga beli from selected product
+        document.getElementById('restockProductKode').addEventListener('change', function() {
+            const selected = this.options[this.selectedIndex];
+            const nama = selected.getAttribute('data-nama');
+            const harga = selected.getAttribute('data-harga');
+            if (harga && harga > 0) {
+                document.getElementById('restockHarga').value = harga;
+            }
+        });
+    }
+
+    function closeRestockModal() {
+        const modal = document.getElementById('restockModalOverlay');
+        if (modal) modal.remove();
     }
 
     async function saveRestock(e) {
         e.preventDefault();
-        const kode_barang = document.getElementById('restockKodeBarang').value;
-        const jumlah = parseInt(document.getElementById('restockJumlah').value);
-        const harga = parseInt(document.getElementById('restockHarga').value);
-        
-        const product = products.find(p => p.kode_barang === kode_barang);
-        if (!product) {
-            showToast('Produk tidak ditemukan', 'error');
-            return;
-        }
+        const selectedOption = document.getElementById('restockProductKode').options[document.getElementById('restockProductKode').selectedIndex];
+        const kodeBarang = document.getElementById('restockProductKode').value;
+        const namaBarang = selectedOption.getAttribute('data-nama');
+        const jumlahMasuk = parseInt(document.getElementById('restockJumlah').value);
+        const hargaBeliSatuan = parseInt(document.getElementById('restockHarga').value);
+        const namaSupplier = document.getElementById('restockSupplierNama').value;
+        const keterangan = document.getElementById('restockKeterangan').value;
+        const tanggal = new Date().toISOString().split('T')[0];
+        const totalModal = jumlahMasuk * hargaBeliSatuan;
         
         const restockData = {
-            tanggal: document.getElementById('restockTanggal').value,
-            kode_barang: kode_barang,
-            nama_barang: product.nama_barang,
-            jumlah_masuk: jumlah,
-            harga_beli_satuan: harga,
-            total_modal: jumlah * harga,
-            nama_supplier: document.getElementById('restockSupplier').value,
-            keterangan: document.getElementById('restockKeterangan').value
+            tanggal: tanggal,
+            kode_barang: kodeBarang,
+            nama_barang: namaBarang,
+            jumlah_masuk: jumlahMasuk,
+            harga_beli_satuan: hargaBeliSatuan,
+            total_modal: totalModal,
+            nama_supplier: namaSupplier,
+            keterangan: keterangan
         };
         
         const result = await callAPI('addRestock', restockData);
         
         if (result.success) {
-            const newStock = product.stok_saat_ini + jumlah;
-            await callAPI('updateStock', { kode_barang: kode_barang, stok: newStock });
-            showToast(`✓ Restock ${jumlah} ${product.satuan} berhasil!`);
+            showToast(`✓ Restock ${jumlahMasuk} item berhasil!`);
             await loadAllData();
             renderProductsList();
             renderProductGrid();
             renderRestocksList();
-            closeModal('restockModal');
+            closeRestockModal();
         } else {
-            showToast('Gagal menyimpan restock', 'error');
+            showToast('Gagal menyimpan restock: ' + (result.error || 'Unknown'), 'error');
         }
     }
 
-    // ========== TRANSACTIONS ==========
-    function renderTransactions() {
-        const container = document.getElementById('view-transactions');
-        container.innerHTML = `
-            <div class="futuristic-card">
-                <h3 style="color:white; margin-bottom:20px;">📋 Riwayat Transaksi Penjualan</h3>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse;">
-                        <thead><tr style="border-bottom:1px solid var(--glass-border);">
-                            <th style="padding:12px;">Tanggal</th><th style="padding:12px;">Jam</th><th style="padding:12px;">No. Invoice</th>
-                            <th style="padding:12px;">Barang</th><th style="padding:12px;">Jumlah</th><th style="padding:12px;">Total</th>
-                            <th style="padding:12px;">Metode</th><th style="padding:12px;">Kasir</th>
-                        </tr></thead>
-                        <tbody id="transactionsList"></tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-        renderTransactionsList();
-    }
-
-    function renderTransactionsList() {
-        const tbody = document.getElementById('transactionsList');
-        if (!tbody) return;
-        
-        if (transactions.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="padding:40px; text-align:center;">Belum ada transaksi</td></tr>';
-            return;
-        }
-        
-        tbody.innerHTML = transactions.map(t => `
-            <tr style="border-bottom:1px solid var(--glass-border);">
-                <td style="padding:12px;">${t.tanggal || '-'}</td>
-                <td style="padding:12px;">${t.jam || '-'}</td>
-                <td style="padding:12px;">${t.no_invoice || '-'}</td>
-                <td style="padding:12px;">${t.nama_barang || '-'}</td>
-                <td style="padding:12px;">${t.jumlah_beli || 0}</td>
-                <td style="padding:12px; color:var(--neon-cyan);">${formatCurrency(t.total_harga)}</td>
-                <td style="padding:12px;">${t.metode_bayar || '-'}</td>
-                <td style="padding:12px;">${t.kasir || '-'}</td>
-            </tr>
-        `).join('');
-    }
-
-    // ========== CUSTOMERS ==========
-    function renderCustomers() {
-        const container = document.getElementById('view-customers');
-        container.innerHTML = `
-            <div class="futuristic-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h3 style="color:white;">👥 Data Pelanggan</h3>
-                    <button class="btn-primary" onclick="openCustomerModal()">+ Tambah Pelanggan</button>
-                </div>
-                <div id="customersList"></div>
-            </div>
-        `;
-        renderCustomersList();
-    }
-
-    function renderCustomersList() {
-        const container = document.getElementById('customersList');
-        if (!container) return;
-        
-        if (customers.length === 0) {
-            container.innerHTML = '<p style="text-align:center; padding:40px;">Tidak ada data pelanggan</p>';
-            return;
-        }
-        
-        container.innerHTML = customers.map(c => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--glass-border);">
-                <div>
-                    <p style="color:white; font-weight:500;">${c.nama}</p>
-                    <p style="font-size:12px;">📞 ${c.no_wa || '-'} | 📍 ${c.alamat || '-'}</p>
-                    <p style="font-size:11px; color:#888;">${c.catatan || ''}</p>
-                </div>
-                <div>
-                    <button onclick="editCustomer('${c.nama}')" style="background:rgba(0,242,255,0.1); border:none; padding:6px 12px; border-radius:6px; color:var(--neon-cyan); cursor:pointer;">✏️</button>
-                    <button onclick="deleteCustomer('${c.nama}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer; margin-left:8px;">🗑️</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function openCustomerModal(editNama = null) {
-        const customer = editNama ? customers.find(c => c.nama === editNama) : null;
-        const modalHtml = `
-            <div id="customerModal" class="modal-overlay active">
-                <div class="modal-content glass" style="max-width:500px; padding:24px;">
-                    <h3 style="color:white; margin-bottom:20px;">${customer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
-                    <form id="customerForm" onsubmit="saveCustomer(event)">
-                        <input type="hidden" id="editNama" value="${customer ? customer.nama : ''}">
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Nama Lengkap</label>
-                            <input type="text" id="customerNama" required value="${customer ? customer.nama : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">No. WhatsApp</label>
-                            <input type="text" id="customerWa" value="${customer ? customer.no_wa || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Alamat</label>
-                            <textarea id="customerAlamat" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">${customer ? customer.alamat || '' : ''}</textarea>
-                        </div>
-                        <div style="margin-bottom:24px;">
-                            <label style="font-size:12px;">Catatan</label>
-                            <input type="text" id="customerCatatan" value="${customer ? customer.catatan || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="display:flex; gap:12px;">
-                            <button type="button" onclick="closeModal('customerModal')" class="btn-outline" style="flex:1;">Batal</button>
-                            <button type="submit" class="btn-primary" style="flex:2;">Simpan</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-        const existing = document.getElementById('customerModal');
-        if (existing) existing.remove();
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
-    async function saveCustomer(e) {
-        e.preventDefault();
-        const editNama = document.getElementById('editNama').value;
-        const customerData = {
-            nama: document.getElementById('customerNama').value,
-            no_wa: document.getElementById('customerWa').value,
-            alamat: document.getElementById('customerAlamat').value,
-            catatan: document.getElementById('customerCatatan').value
-        };
-        
-        let result;
-        if (editNama) {
-            customerData.old_nama = editNama;
-            result = await callAPI('updateCustomer', customerData);
-        } else {
-            result = await callAPI('addCustomer', customerData);
-        }
-        
-        if (result.success) {
-            showToast(editNama ? 'Pelanggan diperbarui' : 'Pelanggan ditambahkan');
-            await loadAllData();
-            renderCustomersList();
-            closeModal('customerModal');
-        } else {
-            showToast('Gagal menyimpan', 'error');
-        }
-    }
-
-    async function deleteCustomer(nama) {
-        if (confirm('Yakin ingin menghapus pelanggan ini?')) {
-            const result = await callAPI('deleteCustomer', { nama: nama });
-            if (result.success) {
-                showToast('Pelanggan dihapus');
-                await loadAllData();
-                renderCustomersList();
-            } else {
-                showToast('Gagal menghapus', 'error');
-            }
-        }
-    }
-
-    function editCustomer(nama) {
-        openCustomerModal(nama);
-    }
-
-    // ========== SUPPLIERS ==========
-    function renderSuppliers() {
-        const container = document.getElementById('view-suppliers');
-        container.innerHTML = `
-            <div class="futuristic-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h3 style="color:white;">🚚 Data Supplier</h3>
-                    <button class="btn-primary" onclick="openSupplierModal()">+ Tambah Supplier</button>
-                </div>
-                <div id="suppliersList"></div>
-            </div>
-        `;
-        renderSuppliersList();
-    }
-
-    function renderSuppliersList() {
-        const container = document.getElementById('suppliersList');
-        if (!container) return;
-        
-        if (suppliers.length === 0) {
-            container.innerHTML = '<p style="text-align:center; padding:40px;">Tidak ada data supplier</p>';
-            return;
-        }
-        
-        container.innerHTML = suppliers.map(s => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--glass-border);">
-                <div>
-                    <p style="color:white; font-weight:500;">${s.nama}</p>
-                    <p style="font-size:12px;">📞 ${s.kontak || '-'} | 📍 ${s.alamat || '-'}</p>
-                    <p style="font-size:11px; color:#888;">${s.catatan || ''}</p>
-                </div>
-                <div>
-                    <button onclick="editSupplier('${s.nama}')" style="background:rgba(0,242,255,0.1); border:none; padding:6px 12px; border-radius:6px; color:var(--neon-cyan); cursor:pointer;">✏️</button>
-                    <button onclick="deleteSupplier('${s.nama}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer; margin-left:8px;">🗑️</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function openSupplierModal(editNama = null) {
-        const supplier = editNama ? suppliers.find(s => s.nama === editNama) : null;
-        const modalHtml = `
-            <div id="supplierModal" class="modal-overlay active">
-                <div class="modal-content glass" style="max-width:500px; padding:24px;">
-                    <h3 style="color:white; margin-bottom:20px;">${supplier ? 'Edit Supplier' : 'Tambah Supplier'}</h3>
-                    <form id="supplierForm" onsubmit="saveSupplier(event)">
-                        <input type="hidden" id="editSupplierNama" value="${supplier ? supplier.nama : ''}">
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Nama Supplier</label>
-                            <input type="text" id="supplierNama" required value="${supplier ? supplier.nama : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Alamat</label>
-                            <textarea id="supplierAlamat" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">${supplier ? supplier.alamat || '' : ''}</textarea>
-                        </div>
-                        <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Kontak</label>
-                            <input type="text" id="supplierKontak" value="${supplier ? supplier.kontak || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="margin-bottom:24px;">
-                            <label style="font-size:12px;">Catatan</label>
-                            <input type="text" id="supplierCatatan" value="${supplier ? supplier.catatan || '' : ''}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
-                        </div>
-                        <div style="display:flex; gap:12px;">
-                            <button type="button" onclick="closeModal('supplierModal')" class="btn-outline" style="flex:1;">Batal</button>
-                            <button type="submit" class="btn-primary" style="flex:2;">Simpan</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-        const existing = document.getElementById('supplierModal');
-        if (existing) existing.remove();
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
-    async function saveSupplier(e) {
-        e.preventDefault();
-        const editNama = document.getElementById('editSupplierNama').value;
-        const supplierData = {
-            nama: document.getElementById('supplierNama').value,
-            alamat: document.getElementById('supplierAlamat').value,
-            kontak: document.getElementById('supplierKontak').value,
-            catatan: document.getElementById('supplierCatatan').value
-        };
-        
-        let result;
-        if (editNama) {
-            supplierData.old_nama = editNama;
-            result = await callAPI('updateSupplier', supplierData);
-        } else {
-            result = await callAPI('addSupplier', supplierData);
-        }
-        
-        if (result.success) {
-            showToast(editNama ? 'Supplier diperbarui' : 'Supplier ditambahkan');
-            await loadAllData();
-            renderSuppliersList();
-            closeModal('supplierModal');
-        } else {
-            showToast('Gagal menyimpan', 'error');
-        }
-    }
-
-    async function deleteSupplier(nama) {
-        if (confirm('Yakin ingin menghapus supplier ini?')) {
-            const result = await callAPI('deleteSupplier', { nama: nama });
-            if (result.success) {
-                showToast('Supplier dihapus');
-                await loadAllData();
-                renderSuppliersList();
-            } else {
-                showToast('Gagal menghapus', 'error');
-            }
-        }
-    }
-
-    function editSupplier(nama) {
-        openSupplierModal(nama);
-    }
-
-    // ========== EXPENSES ==========
+    // ============================================
+    // EXPENSES COMPONENT (PENGELUARAN OPERASIONAL)
+    // ============================================
     function renderExpenses() {
         const container = document.getElementById('view-expenses');
         container.innerHTML = `
@@ -1272,11 +1322,16 @@
                 </div>
                 <div style="overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse;">
-                        <thead><tr style="border-bottom:1px solid var(--glass-border);">
-                            <th style="padding:12px;">Tanggal</th><th style="padding:12px;">Kategori</th>
-                            <th style="padding:12px;">Keterangan</th><th style="padding:12px;">Jumlah</th>
-                            <th style="padding:12px;">Bukti</th><th style="padding:12px;">Aksi</th>
-                        </tr></thead>
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--glass-border);">
+                                <th style="padding:12px; text-align:left;">Tanggal</th>
+                                <th style="padding:12px; text-align:left;">Kategori</th>
+                                <th style="padding:12px; text-align:left;">Keterangan</th>
+                                <th style="padding:12px; text-align:left;">Jumlah Uang</th>
+                                <th style="padding:12px; text-align:left;">Bukti</th>
+                                <th style="padding:12px; text-align:center;">Aksi</th>
+                            </tr>
+                        </thead>
                         <tbody id="expensesList"></tbody>
                     </table>
                 </div>
@@ -1290,19 +1345,19 @@
         if (!tbody) return;
         
         if (expenses.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center;">Belum ada data pengeluaran</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center; color:#666;">Belum ada pengeluaran</td></tr>';
             return;
         }
         
         tbody.innerHTML = expenses.map(e => `
             <tr style="border-bottom:1px solid var(--glass-border);">
-                <td style="padding:12px;">${e.tanggal || '-'}</td>
+                <td style="padding:12px;">${formatDateOnly(e.tanggal)}</td>
                 <td style="padding:12px;">${e.kategori || '-'}</td>
                 <td style="padding:12px;">${e.keterangan || '-'}</td>
-                <td style="padding:12px; color:var(--neon-cyan);">${formatCurrency(e.jumlah_uang)}</td>
+                <td style="padding:12px; color:#ef4444;">${formatCurrency(e.jumlah_uang)}</td>
                 <td style="padding:12px;">${e.bukti || '-'}</td>
-                <td style="padding:12px;">
-                    <button onclick="deleteExpense('${e.tanggal}', '${e.keterangan}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer;">🗑️</button>
+                <td style="padding:12px; text-align:center;">
+                    <button onclick="deleteExpense('${e.id}')" style="background:rgba(239,68,68,0.1); border:none; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer;">🗑️</button>
                 </td>
             </tr>
         `).join('');
@@ -1310,41 +1365,53 @@
 
     function openExpenseModal() {
         const modalHtml = `
-            <div id="expenseModal" class="modal-overlay active">
+            <div id="expenseModalOverlay" class="modal-overlay active">
                 <div class="modal-content glass" style="max-width:500px; padding:24px;">
                     <h3 style="color:white; margin-bottom:20px;">Tambah Pengeluaran</h3>
                     <form id="expenseForm" onsubmit="saveExpense(event)">
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Tanggal</label>
+                            <label style="font-size:12px; color:#888;">Tanggal *</label>
                             <input type="date" id="expenseTanggal" required value="${new Date().toISOString().split('T')[0]}" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Kategori</label>
-                            <input type="text" id="expenseKategori" required placeholder="Listrik, Air, Sewa, dll" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                            <label style="font-size:12px; color:#888;">Kategori *</label>
+                            <select id="expenseKategori" required style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
+                                <option value="Listrik">Listrik</option>
+                                <option value="Air">Air</option>
+                                <option value="Sewa">Sewa Tempat</option>
+                                <option value="Gaji">Gaji Karyawan</option>
+                                <option value="Internet">Internet</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
                         </div>
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Keterangan</label>
+                            <label style="font-size:12px; color:#888;">Keterangan *</label>
                             <input type="text" id="expenseKeterangan" required style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
                         <div style="margin-bottom:16px;">
-                            <label style="font-size:12px;">Jumlah Uang</label>
+                            <label style="font-size:12px; color:#888;">Jumlah Uang *</label>
                             <input type="number" id="expenseJumlah" required min="0" step="1000" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
                         <div style="margin-bottom:24px;">
-                            <label style="font-size:12px;">Bukti (Struk/Nota)</label>
-                            <input type="text" id="expenseBukti" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;" placeholder="Struk Ada / Tidak Ada">
+                            <label style="font-size:12px; color:#888;">Bukti</label>
+                            <input type="text" id="expenseBukti" placeholder="Struk Ada / -" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); border-radius:8px; padding:10px; color:white;">
                         </div>
                         <div style="display:flex; gap:12px;">
-                            <button type="button" onclick="closeModal('expenseModal')" class="btn-outline" style="flex:1;">Batal</button>
+                            <button type="button" onclick="closeExpenseModal()" class="btn-outline" style="flex:1;">Batal</button>
                             <button type="submit" class="btn-primary" style="flex:2;">Simpan</button>
                         </div>
                     </form>
                 </div>
             </div>
         `;
-        const existing = document.getElementById('expenseModal');
+        const existing = document.getElementById('expenseModalOverlay');
         if (existing) existing.remove();
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function closeExpenseModal() {
+        const modal = document.getElementById('expenseModalOverlay');
+        if (modal) modal.remove();
     }
 
     async function saveExpense(e) {
@@ -1363,15 +1430,15 @@
             showToast('Pengeluaran ditambahkan');
             await loadAllData();
             renderExpensesList();
-            closeModal('expenseModal');
+            closeExpenseModal();
         } else {
             showToast('Gagal menyimpan', 'error');
         }
     }
 
-    async function deleteExpense(tanggal, keterangan) {
-        if (confirm('Yakin ingin menghapus data pengeluaran ini?')) {
-            const result = await callAPI('deleteExpense', { tanggal: tanggal, keterangan: keterangan });
+    async function deleteExpense(id) {
+        if (confirm('Yakin ingin menghapus pengeluaran ini?')) {
+            const result = await callAPI('deleteExpense', { id: id });
             if (result.success) {
                 showToast('Pengeluaran dihapus');
                 await loadAllData();
@@ -1382,7 +1449,9 @@
         }
     }
 
-    // ========== INIT ==========
+    // ============================================
+    // INITIALIZATION
+    // ============================================
     async function init() {
         updateCurrentDate();
         setInterval(updateCurrentDate, 60000);
@@ -1390,6 +1459,7 @@
         await loadAllData();
         
         if (window.innerWidth <= 768) {
+            document.getElementById('menuToggle').style.display = 'block';
             document.getElementById('mainContent').style.marginLeft = '0';
         }
         
@@ -1399,8 +1469,10 @@
 
     window.addEventListener('resize', () => {
         if (window.innerWidth <= 768) {
+            document.getElementById('menuToggle').style.display = 'block';
             document.getElementById('mainContent').style.marginLeft = '0';
         } else {
+            document.getElementById('menuToggle').style.display = 'none';
             document.getElementById('mainContent').style.marginLeft = '260px';
             closeSidebar();
         }
